@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 struct ReaderHomeView: View {
@@ -310,6 +311,10 @@ private struct ReaderShellView: View {
     @State private var selectedPageIndex: Int
     @State private var isLiquidGlassEnabled: Bool = false
     @State private var lastWordInteractionDescription: String?
+    @ObservedObject private var vocabularyStore = VocabularyStore.shared
+    @State private var activePopover: WordPopoverPresentation?
+
+    private let translationProvider = WordTranslationProvider.shared
 
     init(book: Book) {
         self.book = book
@@ -416,12 +421,17 @@ private struct ReaderShellView: View {
         TabView(selection: $selectedPageIndex) {
             ForEach(book.pages) { page in
                 BookSpreadView(
-                    rightPageText: text(for: page),
+                    page: page,
+                    text: text(for: page),
+                    activePopover: $activePopover,
                     onSingleTap: { selection in
-                        lastWordInteractionDescription = "Tapped \"\(selection.original)\" → \(selection.normalized)"
+                        handleSingleTap(on: page, selection: selection)
                     },
                     onDoubleTap: { selection in
-                        lastWordInteractionDescription = "Double-tapped \"\(selection.original)\" → \(selection.normalized)"
+                        handleDoubleTap(on: page, selection: selection)
+                    },
+                    onAddToVocabulary: { presentation in
+                        addWordToVocabulary(from: presentation, source: "popover")
                     }
                 )
                 .padding(.vertical, 8)
@@ -430,6 +440,11 @@ private struct ReaderShellView: View {
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
         .frame(height: 440)
+        .onChange(of: selectedPageIndex) { _ in
+            withAnimation(.easeOut(duration: 0.2)) {
+                activePopover = nil
+            }
+        }
     }
 
     private var pageIndicator: some View {
@@ -501,6 +516,103 @@ private struct ReaderShellView: View {
 
         let intro = "Level \(currentLevel.rawValue) version coming soon."
         return intro + "\n\n" + page.text(for: currentLevel)
+    }
+
+    private func handleSingleTap(on page: Page, selection: WordDetectingTextView.WordSelection) {
+        let translation = translationProvider.translation(for: selection, in: book)
+        let sample = sampleSentence(for: selection, on: page)
+        let presentation = WordPopoverPresentation(
+            pageIndex: page.index,
+            selection: selection,
+            translation: translation,
+            sampleSentence: sample
+        )
+
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.82, blendDuration: 0.2)) {
+            activePopover = presentation
+        }
+
+        lastWordInteractionDescription = "“\(selection.original)” → “\(translation.vietnamese)” • Tap Add to save."
+    }
+
+    private func handleDoubleTap(on page: Page, selection: WordDetectingTextView.WordSelection) {
+        let translation = translationProvider.translation(for: selection, in: book)
+        let sample = sampleSentence(for: selection, on: page)
+        let presentation = WordPopoverPresentation(
+            pageIndex: page.index,
+            selection: selection,
+            translation: translation,
+            sampleSentence: sample
+        )
+
+        addWordToVocabulary(from: presentation, source: "double_tap")
+    }
+
+    private func addWordToVocabulary(from presentation: WordPopoverPresentation, source: String) {
+        withAnimation(.easeOut(duration: 0.2)) {
+            activePopover = nil
+        }
+
+        let entry = vocabularyStore.addWord(
+            original: presentation.selection.original,
+            translation: presentation.translation,
+            sampleSentence: presentation.sampleSentence,
+            bookID: book.id,
+            pageIndex: presentation.pageIndex
+        )
+
+        if source == "double_tap" {
+            lastWordInteractionDescription = "✓ “\(entry.original)” saved to Vocabulary."
+        } else {
+            lastWordInteractionDescription = "Added “\(entry.original)” to Vocabulary."
+        }
+
+        AnalyticsLogger.shared.log(
+            event: "vocab_added",
+            metadata: [
+                "term": entry.normalized,
+                "book_id": book.id.uuidString,
+                "page_index": String(presentation.pageIndex),
+                "source": source
+            ]
+        )
+    }
+
+    private func sampleSentence(for selection: WordDetectingTextView.WordSelection, on page: Page) -> String {
+        let pageText = text(for: page)
+        if let sentence = sentenceContaining(word: selection.normalized, in: pageText) {
+            return sentence
+        }
+
+        if let sentence = sentenceContaining(word: selection.original, in: pageText) {
+            return sentence
+        }
+
+        let trimmed = pageText
+            .components(separatedBy: .newlines)
+            .first { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return trimmed ?? pageText
+    }
+
+    private func sentenceContaining(word: String, in text: String) -> String? {
+        guard !word.isEmpty else { return nil }
+
+        let escaped = NSRegularExpression.escapedPattern(for: word)
+        let pattern = "([^.!?]*\\b\(escaped)\\b[^.!?]*[.!?])"
+
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+            return nil
+        }
+
+        let range = NSRange(text.startIndex..., in: text)
+        guard let match = regex.firstMatch(in: text, options: [], range: range),
+              let swiftRange = Range(match.range, in: text) else {
+            return nil
+        }
+
+        return String(text[swiftRange]).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
@@ -721,9 +833,12 @@ private struct DifficultyGearControl: View {
 }
 
 private struct BookSpreadView: View {
-    let rightPageText: String
+    let page: Page
+    let text: String
+    @Binding var activePopover: WordPopoverPresentation?
     var onSingleTap: (WordDetectingTextView.WordSelection) -> Void = { _ in }
     var onDoubleTap: (WordDetectingTextView.WordSelection) -> Void = { _ in }
+    var onAddToVocabulary: (WordPopoverPresentation) -> Void = { _ in }
 
     var body: some View {
         GeometryReader { geometry in
@@ -741,9 +856,12 @@ private struct BookSpreadView: View {
 
                 BookPageContainer {
                     RightPageContent(
-                        text: rightPageText,
+                        pageIndex: page.index,
+                        text: text,
+                        activePopover: $activePopover,
                         onSingleTap: onSingleTap,
-                        onDoubleTap: onDoubleTap
+                        onDoubleTap: onDoubleTap,
+                        onAddToVocabulary: onAddToVocabulary
                     )
                 }
                 .frame(width: spreadWidth / 2)
@@ -803,9 +921,15 @@ private struct ArtworkPlaceholder: View {
 }
 
 private struct RightPageContent: View {
+    let pageIndex: Int
     let text: String
+    @Binding var activePopover: WordPopoverPresentation?
     var onSingleTap: (WordDetectingTextView.WordSelection) -> Void
     var onDoubleTap: (WordDetectingTextView.WordSelection) -> Void
+    var onAddToVocabulary: (WordPopoverPresentation) -> Void
+
+    @State private var textViewSize: CGSize = .zero
+    @State private var popoverSize: CGSize = .zero
 
     var body: some View {
         ScrollView {
@@ -815,8 +939,159 @@ private struct RightPageContent: View {
                 onDoubleTap: onDoubleTap
             )
             .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                GeometryReader { proxy in
+                    Color.clear.preference(key: TextViewSizePreferenceKey.self, value: proxy.size)
+                }
+            )
+            .overlay(alignment: .topLeading) {
+                if let presentation = activePopover, presentation.pageIndex == pageIndex {
+                    WordTranslationPopover(presentation: presentation) {
+                        onAddToVocabulary(presentation)
+                    }
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear.preference(key: PopoverSizePreferenceKey.self, value: proxy.size)
+                        }
+                    )
+                    .offset(popoverOffset(for: presentation))
+                    .transition(.scale(scale: 0.95, anchor: .top))
+                }
+            }
         }
+        .onPreferenceChange(TextViewSizePreferenceKey.self) { textViewSize = $0 }
+        .onPreferenceChange(PopoverSizePreferenceKey.self) { popoverSize = $0 }
         .scrollIndicators(.hidden)
+        .animation(.spring(response: 0.4, dampingFraction: 0.85, blendDuration: 0.15), value: activePopover?.id)
+    }
+
+    private func popoverOffset(for presentation: WordPopoverPresentation) -> CGSize {
+        guard textViewSize != .zero else { return .zero }
+
+        let margin: CGFloat = 8
+        let anchor = presentation.anchorRect
+        let width = popoverSize.width
+        let availableWidth = max(textViewSize.width - width, 0)
+        let centeredX = anchor.midX - width / 2
+        let clampedX = max(0, min(centeredX, availableWidth))
+
+        let topSpace = max(anchor.minY, 0)
+
+        var y: CGFloat
+        if popoverSize == .zero {
+            y = max(anchor.minY - 60, 0)
+        } else if topSpace >= popoverSize.height + margin {
+            y = anchor.minY - popoverSize.height - margin
+        } else {
+            y = min(textViewSize.height - popoverSize.height, anchor.maxY + margin)
+        }
+
+        y = max(0, min(y, textViewSize.height - popoverSize.height))
+
+        return CGSize(width: clampedX, height: y)
+    }
+}
+
+private struct WordTranslationPopover: View {
+    let presentation: WordPopoverPresentation
+    var onAdd: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(presentation.translation.headword)
+                        .font(.headline)
+                    Text(presentation.translation.vietnamese)
+                        .font(.title3.weight(.semibold))
+                }
+
+                Spacer()
+
+                Text(presentation.translation.partOfSpeech.displayName)
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(Color.accentColor.opacity(0.16))
+                    )
+            }
+
+            if let definition = presentation.translation.englishDefinition,
+               !definition.isEmpty {
+                Text(definition)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if !presentation.sampleSentence.isEmpty {
+                Text("“\(presentation.sampleSentence)”")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Button(action: onAdd) {
+                Label("Add to Vocabulary", systemImage: "plus.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
+        )
+        .shadow(color: Color.black.opacity(0.18), radius: 18, x: 0, y: 12)
+    }
+}
+
+private struct TextViewSizePreferenceKey: PreferenceKey {
+    static var defaultValue: CGSize = .zero
+
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+        value = nextValue()
+    }
+}
+
+private struct PopoverSizePreferenceKey: PreferenceKey {
+    static var defaultValue: CGSize = .zero
+
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+        value = nextValue()
+    }
+}
+
+private struct WordPopoverPresentation: Identifiable, Equatable {
+    let id = UUID()
+    let pageIndex: Int
+    let selection: WordDetectingTextView.WordSelection
+    let translation: WordTranslation
+    let sampleSentence: String
+    let anchorRect: CGRect
+
+    init(pageIndex: Int, selection: WordDetectingTextView.WordSelection, translation: WordTranslation, sampleSentence: String) {
+        self.pageIndex = pageIndex
+        self.selection = selection
+        self.translation = translation
+        self.sampleSentence = sampleSentence
+
+        if let firstRect = selection.boundingRects.first {
+            anchorRect = selection.boundingRects.dropFirst().reduce(firstRect) { partialResult, rect in
+                partialResult.union(rect)
+            }
+        } else {
+            anchorRect = .zero
+        }
+    }
+
+    static func == (lhs: WordPopoverPresentation, rhs: WordPopoverPresentation) -> Bool {
+        lhs.id == rhs.id
     }
 }
 
