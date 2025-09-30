@@ -424,6 +424,7 @@ private struct ReaderShellView: View {
                     page: page,
                     text: text(for: page),
                     activePopover: $activePopover,
+                    isLiquidGlassEnabled: isLiquidGlassEnabled,
                     onSingleTap: { selection in
                         handleSingleTap(on: page, selection: selection)
                     },
@@ -475,7 +476,6 @@ private struct ReaderShellView: View {
                     .disabled(true)
 
                 LiquidGlassToggle(isOn: $isLiquidGlassEnabled)
-                    .disabled(true)
 
                 Spacer()
 
@@ -836,6 +836,7 @@ private struct BookSpreadView: View {
     let page: Page
     let text: String
     @Binding var activePopover: WordPopoverPresentation?
+    var isLiquidGlassEnabled: Bool
     var onSingleTap: (WordDetectingTextView.WordSelection) -> Void = { _ in }
     var onDoubleTap: (WordDetectingTextView.WordSelection) -> Void = { _ in }
     var onAddToVocabulary: (WordPopoverPresentation) -> Void = { _ in }
@@ -859,6 +860,7 @@ private struct BookSpreadView: View {
                         pageIndex: page.index,
                         text: text,
                         activePopover: $activePopover,
+                        isLiquidGlassEnabled: isLiquidGlassEnabled,
                         onSingleTap: onSingleTap,
                         onDoubleTap: onDoubleTap,
                         onAddToVocabulary: onAddToVocabulary
@@ -924,12 +926,18 @@ private struct RightPageContent: View {
     let pageIndex: Int
     let text: String
     @Binding var activePopover: WordPopoverPresentation?
+    var isLiquidGlassEnabled: Bool
     var onSingleTap: (WordDetectingTextView.WordSelection) -> Void
     var onDoubleTap: (WordDetectingTextView.WordSelection) -> Void
     var onAddToVocabulary: (WordPopoverPresentation) -> Void
 
     @State private var textViewSize: CGSize = .zero
     @State private var popoverSize: CGSize = .zero
+    @State private var glassOrigin: CGPoint = .zero
+    @State private var glassSize: CGSize = .zero
+    @State private var isGlassInitialized: Bool = false
+    @State private var isDraggingGlass: Bool = false
+    @State private var dragStartOrigin: CGPoint = .zero
 
     var body: some View {
         ScrollView {
@@ -945,17 +953,45 @@ private struct RightPageContent: View {
                 }
             )
             .overlay(alignment: .topLeading) {
-                if let presentation = activePopover, presentation.pageIndex == pageIndex {
-                    WordTranslationPopover(presentation: presentation) {
-                        onAddToVocabulary(presentation)
+                ZStack(alignment: .topLeading) {
+                    if isLiquidGlassEnabled, glassSize != .zero {
+                        LiquidGlassBlobView(size: glassSize, isDragging: isDraggingGlass)
+                            .offset(x: glassOrigin.x, y: glassOrigin.y)
+                            .gesture(
+                                DragGesture()
+                                    .onChanged { value in
+                                        if !isDraggingGlass {
+                                            isDraggingGlass = true
+                                            dragStartOrigin = glassOrigin
+                                        }
+
+                                        let proposed = CGPoint(
+                                            x: dragStartOrigin.x + value.translation.width,
+                                            y: dragStartOrigin.y + value.translation.height
+                                        )
+
+                                        glassOrigin = clampedOrigin(for: proposed, in: textViewSize, blobSize: glassSize)
+                                    }
+                                    .onEnded { _ in
+                                        isDraggingGlass = false
+                                    }
+                            )
+                            .accessibilityHidden(true)
+                            .transition(.opacity.combined(with: .scale))
                     }
-                    .background(
-                        GeometryReader { proxy in
-                            Color.clear.preference(key: PopoverSizePreferenceKey.self, value: proxy.size)
+
+                    if let presentation = activePopover, presentation.pageIndex == pageIndex {
+                        WordTranslationPopover(presentation: presentation) {
+                            onAddToVocabulary(presentation)
                         }
-                    )
-                    .offset(popoverOffset(for: presentation))
-                    .transition(.scale(scale: 0.95, anchor: .top))
+                        .background(
+                            GeometryReader { proxy in
+                                Color.clear.preference(key: PopoverSizePreferenceKey.self, value: proxy.size)
+                            }
+                        )
+                        .offset(popoverOffset(for: presentation))
+                        .transition(.scale(scale: 0.95, anchor: .top))
+                    }
                 }
             }
         }
@@ -963,6 +999,19 @@ private struct RightPageContent: View {
         .onPreferenceChange(PopoverSizePreferenceKey.self) { popoverSize = $0 }
         .scrollIndicators(.hidden)
         .animation(.spring(response: 0.4, dampingFraction: 0.85, blendDuration: 0.15), value: activePopover?.id)
+        .onChange(of: textViewSize) { newSize in
+            synchronizeGlassFrame(with: newSize)
+        }
+        .onChange(of: isLiquidGlassEnabled) { isEnabled in
+            if isEnabled {
+                synchronizeGlassFrame(with: textViewSize)
+            } else {
+                isDraggingGlass = false
+            }
+        }
+        .onAppear {
+            synchronizeGlassFrame(with: textViewSize)
+        }
     }
 
     private func popoverOffset(for presentation: WordPopoverPresentation) -> CGSize {
@@ -989,6 +1038,152 @@ private struct RightPageContent: View {
         y = max(0, min(y, textViewSize.height - popoverSize.height))
 
         return CGSize(width: clampedX, height: y)
+    }
+
+    private func synchronizeGlassFrame(with textSize: CGSize) {
+        guard textSize != .zero else { return }
+
+        let preferredSize = preferredGlassSize(for: textSize)
+        glassSize = preferredSize
+
+        if !isGlassInitialized {
+            glassOrigin = initialGlassOrigin(for: textSize, blobSize: preferredSize)
+            isGlassInitialized = true
+        } else {
+            glassOrigin = clampedOrigin(for: glassOrigin, in: textSize, blobSize: preferredSize)
+        }
+    }
+
+    private func preferredGlassSize(for textSize: CGSize) -> CGSize {
+        guard textSize != .zero else { return .zero }
+
+        let maxWidth = textSize.width
+        let width = min(max(maxWidth * 0.45, 140), maxWidth)
+        let height = min(max(width * 0.6, 100), textSize.height)
+
+        return CGSize(width: width, height: height)
+    }
+
+    private func initialGlassOrigin(for textSize: CGSize, blobSize: CGSize) -> CGPoint {
+        let x = max((textSize.width - blobSize.width) / 2, 0)
+        let targetY = textSize.height * 0.25 - blobSize.height / 2
+        let y = max(0, min(targetY, max(0, textSize.height - blobSize.height)))
+
+        return CGPoint(x: x, y: y)
+    }
+
+    private func clampedOrigin(for origin: CGPoint, in textSize: CGSize, blobSize: CGSize) -> CGPoint {
+        let maxX = max(0, textSize.width - blobSize.width)
+        let maxY = max(0, textSize.height - blobSize.height)
+
+        let clampedX = min(max(origin.x, 0), maxX)
+        let clampedY = min(max(origin.y, 0), maxY)
+
+        return CGPoint(x: clampedX, y: clampedY)
+    }
+}
+
+private struct LiquidGlassBlobView: View {
+    let size: CGSize
+    let isDragging: Bool
+
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityContrast) private var accessibilityContrast
+
+    var body: some View {
+        let cornerRadius = size.height * 0.45
+        let emberOrange = Color(red: 0.98, green: 0.58, blue: 0.30)
+        let emberDeep = Color(red: 0.78, green: 0.24, blue: 0.15)
+        let emberGlow = Color(red: 1.0, green: 0.82, blue: 0.58)
+        let outlineBase = colorScheme == .dark ? Color.white : Color.black
+        let outlineOpacity = accessibilityContrast == .high ? 0.9 : 0.35
+        let outlineWidth: CGFloat = accessibilityContrast == .high ? 3 : 1
+
+        return RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(.ultraThinMaterial)
+            .overlay(
+                AngularGradient(
+                    gradient: Gradient(colors: [emberGlow.opacity(0.65), emberOrange.opacity(0.75), emberDeep.opacity(0.6), emberGlow.opacity(0.65)]),
+                    center: .center
+                )
+                .opacity(0.45)
+            )
+            .overlay(
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(colorScheme == .dark ? 0.35 : 0.55),
+                        Color.white.opacity(0.05)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .blendMode(.screen)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(outlineBase.opacity(outlineOpacity), lineWidth: outlineWidth)
+            )
+            .shadow(color: emberOrange.opacity(isDragging ? 0.4 : 0.25), radius: isDragging ? 26 : 20, x: 0, y: isDragging ? 20 : 16)
+            .shadow(color: Color.black.opacity(0.25), radius: isDragging ? 22 : 14, x: 0, y: 10)
+            .frame(width: size.width, height: size.height)
+            .overlay(
+                Capsule(style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.75), Color.white.opacity(0)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: size.width * 0.6, height: size.height * 0.32)
+                    .offset(x: size.width * -0.12, y: size.height * -0.28)
+                    .blur(radius: 6)
+                    .blendMode(.screen)
+            )
+            .overlay(
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color.white.opacity(0.8), Color.white.opacity(0)],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: size.width * 0.45
+                        )
+                    )
+                    .frame(width: size.width * 0.45, height: size.width * 0.45)
+                    .offset(x: size.width * 0.28, y: size.height * 0.08)
+                    .blendMode(.screen)
+            )
+            .overlay(
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [emberOrange.opacity(0.6), Color.clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: size.width * 0.3
+                        )
+                    )
+                    .frame(width: size.width * 0.3, height: size.width * 0.3)
+                    .offset(x: size.width * -0.18, y: size.height * 0.45)
+                    .blur(radius: 8)
+                    .blendMode(.plusLighter)
+            )
+            .overlay(
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [emberGlow.opacity(0.7), Color.clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: size.width * 0.25
+                        )
+                    )
+                    .frame(width: size.width * 0.2, height: size.width * 0.2)
+                    .offset(x: size.width * 0.35, y: size.height * -0.12)
+                    .blendMode(.screen)
+            )
+            .animation(.easeOut(duration: 0.2), value: isDragging)
     }
 }
 
