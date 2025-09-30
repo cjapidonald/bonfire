@@ -12,6 +12,12 @@ objects = {
 24B1E4192B1ED1E200D9D1A8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 24B1E4242B1ED1E200D9D1A8 /* LaunchScreen.storyboard */; };
 24B1E41A2B1ED1E200D9D1A8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 24B1E4232B1ED1E200D9D1A8 /* Assets.xcassets */; };
 24B1E41B2B1ED1E200D9D1A8 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 24B1E4282B1ED1E200D9D1A8 /* Localizable.strings */; };
+9E6AA76793C74F82B8E410D7 /* DesignSystemColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DCFAB9F89AF4057A7F3C9D6 /* DesignSystemColors.swift */; };
+3831F7C553634EBCB8E1A799 /* DesignSystemTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = A727108EB6FE4230A8AD675D /* DesignSystemTypography.swift */; };
+F76697C4C2204146A85D8DBC /* DesignSystemSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35D4D020C8C3462C8D290ACA /* DesignSystemSpacing.swift */; };
+41B49056DF10409DA3EBFB0B /* DesignSystemCorners.swift in Sources */ = {isa = PBXBuildFile; fileRef = E27E89ECE96D4BCB921D923D /* DesignSystemCorners.swift */; };
+6C9044C144E844FE804FA00F /* DesignSystemTextures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BB861349D224469A8F68B9E /* DesignSystemTextures.swift */; };
+CD1399DE866B4DE78DFD9FFE /* DesignSystemDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7985B135AE74DCFAF5788BC /* DesignSystemDemoView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +43,12 @@ objects = {
 24B1E4392B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
 24B1E43A2B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
 24B1E43B2B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
+2DCFAB9F89AF4057A7F3C9D6 /* DesignSystemColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystemColors.swift; sourceTree = "<group>"; };
+A727108EB6FE4230A8AD675D /* DesignSystemTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystemTypography.swift; sourceTree = "<group>"; };
+35D4D020C8C3462C8D290ACA /* DesignSystemSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystemSpacing.swift; sourceTree = "<group>"; };
+E27E89ECE96D4BCB921D923D /* DesignSystemCorners.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystemCorners.swift; sourceTree = "<group>"; };
+1BB861349D224469A8F68B9E /* DesignSystemTextures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystemTextures.swift; sourceTree = "<group>"; };
+D7985B135AE74DCFAF5788BC /* DesignSystemDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystemDemoView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -96,6 +108,11 @@ sourceTree = "<group>";
 24B1E4042B1ED1E200D9D1A8 /* DesignSystem */ = {
 isa = PBXGroup;
 children = (
+2DCFAB9F89AF4057A7F3C9D6 /* DesignSystemColors.swift */,
+A727108EB6FE4230A8AD675D /* DesignSystemTypography.swift */,
+35D4D020C8C3462C8D290ACA /* DesignSystemSpacing.swift */,
+E27E89ECE96D4BCB921D923D /* DesignSystemCorners.swift */,
+1BB861349D224469A8F68B9E /* DesignSystemTextures.swift */,
 24B1E4302B1ED1E200D9D1A8 /* .gitkeep */,
 );
 path = DesignSystem;
@@ -176,6 +193,7 @@ sourceTree = "<group>";
 24B1E40E2B1ED1E200D9D1A8 /* DevTools */ = {
 isa = PBXGroup;
 children = (
+D7985B135AE74DCFAF5788BC /* DesignSystemDemoView.swift */,
 24B1E43A2B1ED1E200D9D1A8 /* .gitkeep */,
 );
 path = DevTools;
@@ -276,6 +294,12 @@ runOnlyForDeploymentPostprocessing = 0;
 isa = PBXSourcesBuildPhase;
 buildActionMask = 2147483647;
 files = (
+9E6AA76793C74F82B8E410D7 /* DesignSystemColors.swift in Sources */,
+3831F7C553634EBCB8E1A799 /* DesignSystemTypography.swift in Sources */,
+F76697C4C2204146A85D8DBC /* DesignSystemSpacing.swift in Sources */,
+41B49056DF10409DA3EBFB0B /* DesignSystemCorners.swift in Sources */,
+6C9044C144E844FE804FA00F /* DesignSystemTextures.swift in Sources */,
+CD1399DE866B4DE78DFD9FFE /* DesignSystemDemoView.swift in Sources */,
 24B1E4182B1ED1E200D9D1A8 /* RootTabView.swift in Sources */,
 24B1E4172B1ED1E200D9D1A8 /* BonfireApp.swift in Sources */,
 );
