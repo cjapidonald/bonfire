@@ -343,6 +343,150 @@ struct StarParticles: View {
     }
 }
 
+/// A vertical difficulty slider with a glowing gear knob and four haptic stops.
+struct DifficultyGearSlider: View {
+    private let stops: [String] = ["A1", "A2", "B1", "B2"]
+    private let knobSize: CGFloat = 86
+
+    @State private var activeIndex: Int = 0
+    @State private var hasStartedAnimation: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DesignSpacing.md) {
+            Text("Difficulty Gear")
+                .font(DesignTypography.Headline.font)
+                .foregroundColor(DesignColor.agedParchment.opacity(0.95))
+                .shadow(color: Color.black.opacity(0.45), radius: 6, x: 0, y: 3)
+
+            Text("Snap through each labeled stop with satisfying gear clicks.")
+                .font(DesignTypography.Footnote.font)
+                .foregroundColor(DesignColor.agedParchment.opacity(0.75))
+
+            GeometryReader { proxy in
+                let usableHeight = proxy.size.height - knobSize
+                let stepHeight = usableHeight / CGFloat(max(stops.count - 1, 1))
+                let knobOffset = CGFloat(activeIndex) * stepHeight
+
+                ZStack(alignment: .top) {
+                    RoundedRectangle(cornerRadius: 32, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    DesignColor.deepWalnut.opacity(0.9),
+                                    DesignColor.deepWalnut.opacity(0.6)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                                .stroke(DesignColor.ink.opacity(0.35), lineWidth: 1)
+                        )
+                        .shadow(color: Color.black.opacity(0.5), radius: 18, x: 0, y: 12)
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(stops.enumerated()), id: \.offset) { index, label in
+                            HStack(alignment: .center, spacing: DesignSpacing.md) {
+                                Capsule()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [
+                                                DesignColor.aquaGlow.opacity(index == activeIndex ? 0.9 : 0.45),
+                                                DesignColor.amberGlow.opacity(index == activeIndex ? 0.9 : 0.45)
+                                            ],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                    .frame(width: 36, height: 5)
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(Color.white.opacity(index == activeIndex ? 0.55 : 0.2), lineWidth: 1)
+                                    )
+                                    .shadow(color: DesignColor.amberGlow.opacity(0.35), radius: index == activeIndex ? 8 : 0, x: 0, y: 0)
+
+                                Text(label)
+                                    .font(DesignTypography.Subheadline.font)
+                                    .foregroundColor(DesignColor.agedParchment.opacity(index == activeIndex ? 0.95 : 0.5))
+                                    .shadow(color: Color.black.opacity(index == activeIndex ? 0.45 : 0), radius: 6, x: 0, y: 2)
+
+                                Spacer()
+                            }
+
+                            if index < stops.count - 1 {
+                                Spacer()
+                            }
+                        }
+                    }
+                    .padding(.vertical, knobSize / 2)
+                    .padding(.leading, knobSize * 0.7)
+                    .padding(.trailing, DesignSpacing.lg)
+
+                    gearKnob
+                        .frame(width: knobSize, height: knobSize)
+                        .offset(y: knobOffset)
+                        .animation(.spring(response: 0.8, dampingFraction: 0.78, blendDuration: 0.4), value: activeIndex)
+                }
+            }
+            .frame(width: 220, height: 360)
+        }
+        .padding(DesignSpacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: DesignCornerRadius.card, style: .continuous)
+                .fill(DesignColor.deepWalnut.opacity(0.85))
+                .shadow(color: Color.black.opacity(0.55), radius: 24, x: 0, y: 18)
+        )
+        .task {
+            guard !hasStartedAnimation else { return }
+            hasStartedAnimation = true
+
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 2_100_000_000)
+                await MainActor.run {
+                    withAnimation(.spring(response: 0.7, dampingFraction: 0.78, blendDuration: 0.3)) {
+                        activeIndex = (activeIndex + 1) % stops.count
+                    }
+                }
+            }
+        }
+    }
+
+    private var gearKnob: some View {
+        ZStack {
+            Circle()
+                .fill(Color.clear)
+                .shadow(color: DesignColor.amberGlow.opacity(0.45), radius: 28, x: 0, y: 12)
+
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [DesignColor.amberGlow.opacity(0.95), DesignColor.aquaGlow.opacity(0.75)],
+                        center: .center,
+                        startRadius: 4,
+                        endRadius: knobSize / 2
+                    )
+                )
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(0.35), lineWidth: 1.5)
+                )
+                .overlay(
+                    Circle()
+                        .stroke(DesignColor.ink.opacity(0.25), lineWidth: 3)
+                        .blur(radius: 1)
+                        .offset(y: 1.5)
+                        .mask(Circle())
+                )
+
+            Image(systemName: "gearshape.fill")
+                .font(.system(size: 34, weight: .bold))
+                .foregroundColor(DesignColor.deepWalnut)
+                .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 4)
+        }
+    }
+}
+
 // MARK: - Previews
 
 struct WoodCard_Previews: PreviewProvider {
@@ -455,6 +599,15 @@ struct GearSlider_Previews: PreviewProvider {
 struct StarParticles_Previews: PreviewProvider {
     static var previews: some View {
         StarParticles()
+            .padding()
+            .background(DesignColor.deepWalnut)
+            .previewLayout(.sizeThatFits)
+    }
+}
+
+struct DifficultyGearSlider_Previews: PreviewProvider {
+    static var previews: some View {
+        DifficultyGearSlider()
             .padding()
             .background(DesignColor.deepWalnut)
             .previewLayout(.sizeThatFits)
