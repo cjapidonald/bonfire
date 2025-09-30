@@ -3,3 +3,8 @@
 "tab.vocab" = "Từ vựng";
 "tab.profile" = "Hồ sơ";
 "placeholder.comingSoon" = "Sắp ra mắt";
+"settings.title" = "Cài đặt";
+"settings.section.language" = "Ngôn ngữ";
+"settings.language" = "Ngôn ngữ ứng dụng";
+"language.english" = "Tiếng Anh";
+"language.vietnamese" = "Tiếng Việt";

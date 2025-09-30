@@ -6,7 +6,7 @@ struct RootTabView: View {
     var body: some View {
         TabView(selection: $selection) {
             ForEach(RootTab.allCases) { tab in
-                PlaceholderView(titleKey: tab.titleKey)
+                tab.destination
                     .tabItem {
                         Label(tab.titleKey, systemImage: tab.systemImage)
                     }
@@ -58,6 +58,16 @@ private enum RootTab: String, CaseIterable, Identifiable {
         }
     }
 
+    @ViewBuilder
+    var destination: some View {
+        switch self {
+        case .profile:
+            ProfileView()
+        case .reader, .audio, .vocab:
+            PlaceholderView(titleKey: titleKey)
+        }
+    }
+
     var systemImage: String {
         switch self {
         case .reader:
@@ -75,5 +85,6 @@ private enum RootTab: String, CaseIterable, Identifiable {
 struct RootTabView_Previews: PreviewProvider {
     static var previews: some View {
         RootTabView()
+            .environmentObject(LanguageManager())
     }
 }
