@@ -2,11 +2,11 @@ import SwiftUI
 
 struct ReaderHomeView: View {
     @State private var path: [Book] = []
-    @State private var difficultyFilter: DifficultyRange = .all
+    @State private var levelFilter: LevelFilter = .all
     @State private var topicFilter: TopicFilter = .all
-    @State private var lengthFilter: BookLength = .all
+    @State private var lengthFilter: LengthFilter = .all
 
-    private let books = Book.sampleLibrary
+    private let contentProvider = ContentProvider.shared
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -59,7 +59,7 @@ struct ReaderHomeView: View {
                 .padding(.horizontal)
 
             HStack(spacing: 12) {
-                FilterMenu(title: "Difficulty", selection: $difficultyFilter)
+                FilterMenu(title: "Difficulty", selection: $levelFilter)
                 FilterMenu(title: "Topic", selection: $topicFilter)
                 FilterMenu(title: "Length", selection: $lengthFilter)
             }
@@ -68,8 +68,8 @@ struct ReaderHomeView: View {
     }
 
     private var filteredBooks: [Book] {
-        books.filter { book in
-            difficultyFilter.contains(book.difficulty) &&
+        contentProvider.books.filter { book in
+            levelFilter.contains(book.level) &&
             topicFilter.contains(book.topic) &&
             lengthFilter.contains(book.length)
         }
@@ -169,7 +169,7 @@ private protocol FilterOption: CaseIterable, Identifiable, Hashable {
 
 // MARK: - Models & Filters
 
-private enum DifficultyRange: String, FilterOption {
+private enum LevelFilter: String, FilterOption {
     case all
     case a1a2
     case b1b2
@@ -196,14 +196,14 @@ private enum DifficultyRange: String, FilterOption {
         }
     }
 
-    func contains(_ difficulty: DifficultyLevel) -> Bool {
+    func contains(_ level: Level) -> Bool {
         switch self {
         case .all:
             return true
         case .a1a2:
-            return [.a1, .a2].contains(difficulty)
+            return [.a1, .a2].contains(level)
         case .b1b2:
-            return [.b1, .b2].contains(difficulty)
+            return [.b1, .b2].contains(level)
         }
     }
 }
@@ -241,12 +241,23 @@ private enum TopicFilter: String, FilterOption {
         }
     }
 
-    func contains(_ topic: TopicFilter) -> Bool {
-        self == .all || self == topic
+    func contains(_ topic: BookTopic) -> Bool {
+        switch self {
+        case .all:
+            return true
+        case .adventure:
+            return topic == .adventure
+        case .science:
+            return topic == .science
+        case .culture:
+            return topic == .culture
+        case .fantasy:
+            return topic == .fantasy
+        }
     }
 }
 
-private enum BookLength: String, FilterOption {
+private enum LengthFilter: String, FilterOption {
     case all
     case short
     case medium
@@ -277,89 +288,123 @@ private enum BookLength: String, FilterOption {
     }
 
     func contains(_ length: BookLength) -> Bool {
-        self == .all || self == length
+        switch self {
+        case .all:
+            return true
+        case .short:
+            return length == .short
+        case .medium:
+            return length == .medium
+        case .long:
+            return length == .long
+        }
     }
-}
-
-private enum DifficultyLevel: String {
-    case a1 = "A1"
-    case a2 = "A2"
-    case b1 = "B1"
-    case b2 = "B2"
-}
-
-private struct Book: Identifiable, Hashable {
-    let id: UUID
-    let title: String
-    let difficulty: DifficultyLevel
-    let topic: TopicFilter
-    let length: BookLength
-
-    var tags: [String] {
-        [difficulty.rawValue, topic.title, length.title]
-    }
-
-    init(id: UUID = UUID(), title: String, difficulty: DifficultyLevel, topic: TopicFilter, length: BookLength) {
-        self.id = id
-        self.title = title
-        self.difficulty = difficulty
-        self.topic = topic
-        self.length = length
-    }
-}
-
-private extension Book {
-    static let sampleLibrary: [Book] = [
-        Book(title: "A Walk Through the Forest", difficulty: .a1, topic: .adventure, length: .short),
-        Book(title: "City Markets Around the World", difficulty: .a2, topic: .culture, length: .medium),
-        Book(title: "Discovering Ocean Life", difficulty: .b1, topic: .science, length: .short),
-        Book(title: "Legends of the Night Sky", difficulty: .b2, topic: .fantasy, length: .long),
-        Book(title: "The Secret of the Old Lighthouse", difficulty: .b1, topic: .adventure, length: .medium),
-        Book(title: "Festival of Lights", difficulty: .a2, topic: .culture, length: .short),
-        Book(title: "Journey to the Mountains", difficulty: .b2, topic: .adventure, length: .long),
-        Book(title: "Mysteries of Space", difficulty: .b1, topic: .science, length: .long),
-        Book(title: "Gardens of the World", difficulty: .a1, topic: .culture, length: .short)
-    ]
 }
 
 // MARK: - Reader Shell
 
 private struct ReaderShellView: View {
     let book: Book
+    @State private var selectedPageIndex: Int = 1
 
     var body: some View {
-        VStack(spacing: 24) {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [6]))
-                .frame(height: 180)
-                .overlay(
-                    VStack(spacing: 12) {
-                        Image(systemName: "book")
-                            .font(.system(size: 40))
-                            .foregroundStyle(.secondary)
-                        Text("Reader Placeholder")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                )
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("By \(book.author)")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text(book.title)
-                    .font(.title2.weight(.semibold))
+                if let subtitle = book.subtitle {
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
 
                 TagList(tags: book.tags)
+
+                Text(book.summary)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer()
+            TabView(selection: $selectedPageIndex) {
+                ForEach(book.pages) { page in
+                    PageReaderView(page: page)
+                        .tag(page.index)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .automatic))
+            .indexViewStyle(.page(backgroundDisplayMode: .interactive))
+            .frame(maxWidth: .infinity)
 
-            Text("Content coming soon.")
+            Text("Page \(selectedPageIndex) of \(book.pages.count)")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding()
         .navigationTitle(book.title)
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            selectedPageIndex = book.pages.first?.index ?? 1
+        }
+    }
+}
+
+private struct PageReaderView: View {
+    let page: Page
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Page \(page.index)")
+                    .font(.title3.weight(.semibold))
+
+                ForEach(page.variants) { variant in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(variant.kind.displayName)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        Text(variant.content)
+                            .font(variant.kind == .original ? .body : .callout)
+                    }
+                }
+
+                if !page.dictionaryEntries.isEmpty {
+                    Divider()
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Key Words")
+                            .font(.headline)
+
+                        ForEach(page.dictionaryEntries) { entry in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(entry.term.capitalized)
+                                    .font(.subheadline.weight(.semibold))
+
+                                Text(entry.definition)
+                                    .font(.footnote)
+
+                                Text(entry.example)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal)
+            .padding(.vertical, 24)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemBackground))
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.vertical, 4)
     }
 }
 
