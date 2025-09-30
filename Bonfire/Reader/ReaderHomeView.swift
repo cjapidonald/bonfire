@@ -305,106 +305,333 @@ private enum LengthFilter: String, FilterOption {
 
 private struct ReaderShellView: View {
     let book: Book
-    @State private var selectedPageIndex: Int = 1
+
+    @State private var selectedLevel: Level
+    @State private var selectedPageIndex: Int
+    @State private var isLiquidGlassEnabled: Bool = false
+
+    init(book: Book) {
+        self.book = book
+        _selectedLevel = State(initialValue: book.level)
+        _selectedPageIndex = State(initialValue: book.pages.first?.index ?? 1)
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
+        VStack(spacing: 0) {
+            topBar
+
+            levelPicker
+                .padding(.horizontal)
+                .padding(.top, 16)
+
+            bookViewport
+                .padding(.horizontal)
+                .padding(.top, 24)
+
+            pageIndicator
+                .padding(.horizontal)
+                .padding(.top, 12)
+
+            Spacer(minLength: 24)
+
+            bottomBar
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            LinearGradient(
+                colors: [Color(uiColor: .systemGroupedBackground), Color(uiColor: .secondarySystemGroupedBackground)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .navigationTitle(book.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                EmptyView()
+            }
+        }
+    }
+
+    private var topBar: some View {
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(book.title)
+                    .font(.title3.weight(.semibold))
+
                 Text("By \(book.author)")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
                 if let subtitle = book.subtitle {
                     Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(.footnote)
+                        .foregroundStyle(Color.secondary.opacity(0.7))
                 }
 
                 TagList(tags: book.tags)
+                    .padding(.top, 8)
 
-                Text(book.summary)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            TabView(selection: $selectedPageIndex) {
-                ForEach(book.pages) { page in
-                    PageReaderView(page: page)
-                        .tag(page.index)
+                if !book.summary.isEmpty {
+                    Text(book.summary)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 8)
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: .automatic))
-            .indexViewStyle(.page(backgroundDisplayMode: .interactive))
-            .frame(maxWidth: .infinity)
 
-            Text("Page \(selectedPageIndex) of \(book.pages.count)")
+            Spacer()
+
+            ProgressRing(progress: readingProgress)
+        }
+        .padding(.horizontal)
+        .padding(.top, 20)
+    }
+
+    private var levelPicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Reading Level")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Picker("Reading Level", selection: $selectedLevel) {
+                ForEach(Level.allCases) { level in
+                    Text(level.rawValue).tag(level)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    private var bookViewport: some View {
+        TabView(selection: $selectedPageIndex) {
+            ForEach(book.pages) { page in
+                BookSpreadView(rightPageText: text(for: page))
+                    .padding(.vertical, 8)
+                    .tag(page.index)
+            }
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .frame(height: 440)
+    }
+
+    private var pageIndicator: some View {
+        let position = currentPagePosition
+
+        return HStack {
+            Text("Page \(position) of \(book.pages.count)")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .center)
+
+            Spacer()
+
+            Text("\(Int(readingProgress * 100))% complete")
+                .font(.footnote.monospacedDigit())
+                .foregroundStyle(.secondary)
         }
-        .padding()
-        .navigationTitle(book.title)
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            selectedPageIndex = book.pages.first?.index ?? 1
+    }
+
+    private var bottomBar: some View {
+        VStack(spacing: 12) {
+            Divider()
+
+            HStack(spacing: 12) {
+                ReaderControlButton(title: "Record", systemImage: "record.circle")
+                    .disabled(true)
+
+                ReaderControlButton(title: "Listen", systemImage: "headphones")
+                    .disabled(true)
+
+                LiquidGlassToggle(isOn: $isLiquidGlassEnabled)
+                    .disabled(true)
+
+                Spacer()
+
+                Button {
+                } label: {
+                    Text("Submit Reading")
+                        .font(.callout.weight(.semibold))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(true)
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 16)
+        }
+    }
+
+    private var currentPagePosition: Int {
+        guard let index = book.pages.firstIndex(where: { $0.index == selectedPageIndex }) else {
+            return 1
+        }
+        return index + 1
+    }
+
+    private var readingProgress: Double {
+        guard !book.pages.isEmpty else { return 0 }
+        return Double(currentPagePosition) / Double(book.pages.count)
+    }
+
+    private func text(for page: Page) -> String {
+        if selectedLevel == book.level {
+            return page.text(for: selectedLevel)
+        }
+
+        let intro = "Level \(selectedLevel.rawValue) version coming soon."
+        return intro + "\n\n" + page.text(for: selectedLevel)
+    }
+}
+
+private struct BookSpreadView: View {
+    let rightPageText: String
+
+    var body: some View {
+        GeometryReader { geometry in
+            let spreadWidth = geometry.size.width
+
+            HStack(spacing: 0) {
+                BookPageContainer {
+                    ArtworkPlaceholder()
+                }
+                .frame(width: spreadWidth / 2)
+
+                Rectangle()
+                    .fill(Color.black.opacity(0.06))
+                    .frame(width: 1, height: geometry.size.height * 0.8)
+
+                BookPageContainer {
+                    RightPageContent(text: rightPageText)
+                }
+                .frame(width: spreadWidth / 2)
+            }
+            .frame(width: spreadWidth, height: geometry.size.height)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(Color(uiColor: .systemBackground))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(Color.black.opacity(0.08), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.08), radius: 20, x: 0, y: 16)
+            .padding(.horizontal, spreadWidth * 0.05)
         }
     }
 }
 
-private struct PageReaderView: View {
-    let page: Page
+private struct BookPageContainer<Content: View>: View {
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        VStack {
+            content()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+        .padding(24)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemBackground))
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+}
+
+private struct ArtworkPlaceholder: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(style: StrokeStyle(lineWidth: 2, dash: [8]))
+                .foregroundStyle(Color.secondary.opacity(0.6))
+                .overlay(
+                    Image(systemName: "photo")
+                        .font(.system(size: 40))
+                        .foregroundStyle(Color.secondary.opacity(0.6))
+                )
+                .frame(maxWidth: .infinity)
+                .frame(height: 180)
+
+            Text("Artwork Placeholder")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+}
+
+private struct RightPageContent: View {
+    let text: String
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Page \(page.index)")
-                    .font(.title3.weight(.semibold))
-
-                ForEach(page.variants) { variant in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(variant.kind.displayName)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
-
-                        Text(variant.content)
-                            .font(variant.kind == .original ? .body : .callout)
-                    }
-                }
-
-                if !page.dictionaryEntries.isEmpty {
-                    Divider()
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Key Words")
-                            .font(.headline)
-
-                        ForEach(page.dictionaryEntries) { entry in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(entry.term.capitalized)
-                                    .font(.subheadline.weight(.semibold))
-
-                                Text(entry.definition)
-                                    .font(.footnote)
-
-                                Text(entry.example)
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(.vertical, 4)
-                        }
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal)
-            .padding(.vertical, 24)
+            Text(text)
+                .font(.body)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+                .padding(.vertical, 8)
         }
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .padding(.vertical, 4)
+        .scrollIndicators(.hidden)
+    }
+}
+
+private struct ReaderControlButton: View {
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        Button {
+        } label: {
+            Label(title, systemImage: systemImage)
+                .font(.callout.weight(.semibold))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+        }
+        .buttonStyle(.bordered)
+    }
+}
+
+private struct LiquidGlassToggle: View {
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            Label("Liquid Glass", systemImage: "sparkles")
+                .font(.callout.weight(.semibold))
+        }
+        .toggleStyle(.switch)
+    }
+}
+
+private struct ProgressRing: View {
+    let progress: Double
+
+    var body: some View {
+        let displayProgress = min(max(progress, 0), 1)
+
+        ZStack {
+            Circle()
+                .stroke(Color.primary.opacity(0.12), lineWidth: 6)
+
+            Circle()
+                .trim(from: 0, to: displayProgress)
+                .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+
+            Text("\(Int(displayProgress * 100))%")
+                .font(.caption.weight(.semibold))
+                .monospacedDigit()
+        }
+        .frame(width: 56, height: 56)
+    }
+}
+
+private extension Page {
+    func text(for level: Level) -> String {
+        // Future stories may ship multiple difficulty variants; for now we default to the primary text.
+        primaryText
     }
 }
 
