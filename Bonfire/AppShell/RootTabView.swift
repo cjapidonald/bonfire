@@ -40,6 +40,14 @@ private enum RootTab: String, CaseIterable, Identifiable {
     @ViewBuilder
     var destination: some View {
         switch self {
+codex/implement-home-library-books-grid
+        case .reader:
+            ReaderHomeView()
+        case .profile:
+            ProfileView()
+        case .audio, .vocab:
+            PlaceholderView(titleKey: titleKey)
+
         case .books:
             BooksTabView()
         case .vocab:
@@ -48,6 +56,7 @@ private enum RootTab: String, CaseIterable, Identifiable {
             AchievementsTabView()
         case .profile:
             ProfileView()
+main
         }
     }
 
