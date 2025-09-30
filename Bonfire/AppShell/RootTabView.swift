@@ -61,9 +61,11 @@ private enum RootTab: String, CaseIterable, Identifiable {
     @ViewBuilder
     var destination: some View {
         switch self {
+        case .reader:
+            ReaderHomeView()
         case .profile:
             ProfileView()
-        case .reader, .audio, .vocab:
+        case .audio, .vocab:
             PlaceholderView(titleKey: titleKey)
         }
     }
