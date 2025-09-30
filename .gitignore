@@ -37,3 +37,9 @@ playground.xcworkspace
 *.swp
 *.swo
 .DS_Store
+
+# Generated binary assets
+*.xcassets/**/*.png
+*.xcassets/**/*.jpg
+*.xcassets/**/*.jpeg
+*.xcassets/**/*.pdf
