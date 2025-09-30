@@ -1,0 +1,178 @@
+{
+  "books": [
+    {
+      "id": "9c6a3618-5d7c-4f9c-b7c1-622c317346c1",
+      "title": "The Little River Lantern",
+      "subtitle": "A Moonlit Story",
+      "author": "Bonfire Studios",
+      "summary": "Mai crafts a special lantern to guide her father home during the river festival.",
+      "level": "A1",
+      "topic": "adventure",
+      "length": "short",
+      "pages": [
+        {
+          "index": 1,
+          "variants": [
+            {
+              "id": "page-1-original",
+              "kind": "original",
+              "languageCode": "en",
+              "content": "Mai lived in a small riverside town. Every month the people lit lanterns to thank the gentle river."
+            },
+            {
+              "id": "page-1-translation",
+              "kind": "translation",
+              "languageCode": "vi",
+              "content": "Mai sống trong một thị trấn nhỏ bên sông. Mỗi tháng mọi người thắp đèn lồng để cảm ơn dòng sông hiền hòa."
+            }
+          ],
+          "dictionaryEntries": [
+            {
+              "term": "lantern",
+              "definition": "a light inside a protective case with handles",
+              "partOfSpeech": "noun",
+              "example": "Mai held the lantern carefully.",
+              "level": "A1"
+            },
+            {
+              "term": "gentle",
+              "definition": "kind and calm in nature",
+              "partOfSpeech": "adjective",
+              "example": "The gentle river moved slowly.",
+              "level": "A1"
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "variants": [
+            {
+              "id": "page-2-original",
+              "kind": "original",
+              "languageCode": "en",
+              "content": "Her father was a fisherman. On the festival night he rowed home late, searching for their house among the glowing lights."
+            },
+            {
+              "id": "page-2-translation",
+              "kind": "translation",
+              "languageCode": "vi",
+              "content": "Cha của Mai là một người đánh cá. Đêm lễ hội ông chèo thuyền về muộn, tìm nhà họ giữa những ánh đèn sáng."
+            }
+          ],
+          "dictionaryEntries": [
+            {
+              "term": "festival",
+              "definition": "a day of celebration",
+              "partOfSpeech": "noun",
+              "example": "The lantern festival filled the town with music.",
+              "level": "A1"
+            },
+            {
+              "term": "glowing",
+              "definition": "shining with a soft light",
+              "partOfSpeech": "adjective",
+              "example": "Glowing lights danced on the river.",
+              "level": "A1"
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "variants": [
+            {
+              "id": "page-3-original",
+              "kind": "original",
+              "languageCode": "en",
+              "content": "Mai wanted to help. She built a small lantern shaped like a lotus flower and hung it by the water."
+            },
+            {
+              "id": "page-3-translation",
+              "kind": "translation",
+              "languageCode": "vi",
+              "content": "Mai muốn giúp đỡ. Cô làm một chiếc đèn lồng nhỏ hình hoa sen và treo nó bên mặt nước."
+            }
+          ],
+          "dictionaryEntries": [
+            {
+              "term": "lotus",
+              "definition": "a water plant with large pink or white flowers",
+              "partOfSpeech": "noun",
+              "example": "The lantern looked like a pink lotus.",
+              "level": "A1"
+            },
+            {
+              "term": "hung",
+              "definition": "to attach something so it swings or stays in the air",
+              "partOfSpeech": "verb",
+              "example": "She hung the lantern by the water.",
+              "level": "A1"
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "variants": [
+            {
+              "id": "page-4-original",
+              "kind": "original",
+              "languageCode": "en",
+              "content": "When her father saw the lotus lantern, he smiled. The soft light led him straight home, and Mai felt proud."
+            },
+            {
+              "id": "page-4-translation",
+              "kind": "translation",
+              "languageCode": "vi",
+              "content": "Khi cha thấy chiếc đèn lồng hình hoa sen, ông mỉm cười. Ánh sáng dịu dàng dẫn ông về thẳng nhà, và Mai cảm thấy tự hào."
+            }
+          ],
+          "dictionaryEntries": [
+            {
+              "term": "proud",
+              "definition": "happy because of something you or someone close has done",
+              "partOfSpeech": "adjective",
+              "example": "Mai felt proud of her lantern.",
+              "level": "A1"
+            },
+            {
+              "term": "soft",
+              "definition": "pleasantly gentle and not harsh",
+              "partOfSpeech": "adjective",
+              "example": "The soft light warmed the night.",
+              "level": "A1"
+            }
+          ]
+        }
+      ],
+      "dictionary": [
+        {
+          "term": "lantern",
+          "definition": "a light inside a protective case with handles",
+          "partOfSpeech": "noun",
+          "example": "Mai held the lantern carefully.",
+          "level": "A1"
+        },
+        {
+          "term": "festival",
+          "definition": "a day of celebration",
+          "partOfSpeech": "noun",
+          "example": "The lantern festival filled the town with music.",
+          "level": "A1"
+        },
+        {
+          "term": "lotus",
+          "definition": "a water plant with large pink or white flowers",
+          "partOfSpeech": "noun",
+          "example": "The lantern looked like a pink lotus.",
+          "level": "A1"
+        },
+        {
+          "term": "proud",
+          "definition": "happy because of something you or someone close has done",
+          "partOfSpeech": "adjective",
+          "example": "Mai felt proud of her lantern.",
+          "level": "A1"
+        }
+      ]
+    }
+  ]
+}
