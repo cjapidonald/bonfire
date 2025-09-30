@@ -298,6 +298,192 @@ struct GearSlider: View {
     }
 }
 
+/// A vertical, gear-driven difficulty slider used in prompt explorations.
+struct DifficultyGearSlider: View {
+    private let stops: [String] = ["A1", "A2", "B1", "B2"]
+    @State private var activeStop: Int = 0
+    @State private var isAnimating = false
+
+    private let knobDiameter: CGFloat = 88
+    private let hopInterval: TimeInterval = 1.5
+
+    var body: some View {
+        VStack(spacing: DesignSpacing.lg) {
+            VStack(spacing: DesignSpacing.xs) {
+                Text("Difficulty Gear")
+                    .font(DesignTypography.Title.font)
+                    .foregroundColor(DesignColor.amberGlow)
+                Text("A1 → B2 with tactile ticks")
+                    .font(DesignTypography.Caption.font)
+                    .foregroundColor(DesignColor.agedParchment.opacity(0.75))
+            }
+
+            GeometryReader { geometry in
+                let width = geometry.size.width
+                let height = geometry.size.height
+                let trackX = width * 0.6
+                let labelX = width * 0.18
+                let steps = max(stops.count - 1, 1)
+                let usableHeight = height - knobDiameter
+                let stepSpacing = usableHeight / CGFloat(steps)
+                let knobOffset = CGFloat(activeStop) * stepSpacing
+                let knobY = knobDiameter / 2 + knobOffset
+
+                ZStack {
+                    sliderTrack
+                        .frame(width: 26)
+                        .position(x: trackX, y: height / 2)
+
+                    ForEach(Array(stops.enumerated()), id: \.offset) { index, label in
+                        let yPosition = knobDiameter / 2 + CGFloat(index) * stepSpacing
+
+                        Group {
+                            Capsule()
+                                .fill(tickColor(for: index))
+                                .frame(width: index == activeStop ? 34 : 24, height: 4)
+                                .shadow(color: DesignColor.amberGlow.opacity(index == activeStop ? 0.35 : 0), radius: 4, x: 0, y: 0)
+                                .overlay(
+                                    Capsule()
+                                        .stroke(DesignColor.ink.opacity(0.35), lineWidth: 1)
+                                        .opacity(index == activeStop ? 0.6 : 0.2)
+                                )
+                                .position(x: trackX, y: yPosition)
+
+                            Circle()
+                                .fill(DesignColor.ink.opacity(0.35))
+                                .frame(width: 8, height: 8)
+                                .position(x: trackX, y: yPosition)
+
+                            Text(label)
+                                .font(DesignTypography.Caption.font)
+                                .foregroundColor(labelColor(for: index))
+                                .tracking(1.5)
+                                .position(x: labelX, y: yPosition)
+                        }
+                    }
+
+                    gearKnob(label: stops[activeStop])
+                        .frame(width: knobDiameter, height: knobDiameter)
+                        .position(x: trackX, y: knobY)
+                        .shadow(color: DesignColor.aquaGlow.opacity(0.4), radius: 18, x: 0, y: 0)
+                        .shadow(color: DesignColor.amberGlow.opacity(0.35), radius: 12, x: 0, y: 6)
+                }
+            }
+            .frame(width: 220, height: 340)
+        }
+        .padding(DesignSpacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: DesignCornerRadius.card)
+                .fill(DesignColor.deepWalnut.opacity(0.7))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignCornerRadius.card)
+                        .stroke(DesignColor.ink.opacity(0.25), lineWidth: 1)
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignCornerRadius.card)
+                .stroke(DesignColor.ink.opacity(0.1), lineWidth: 1)
+                .blendMode(.softLight)
+        )
+        .onAppear {
+            guard !isAnimating else { return }
+            isAnimating = true
+            scheduleNextHop()
+        }
+        .onDisappear {
+            isAnimating = false
+        }
+    }
+
+    private var sliderTrack: some View {
+        RoundedRectangle(cornerRadius: 13, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        DesignColor.ink.opacity(0.7),
+                        DesignColor.deepWalnut.opacity(0.9)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .stroke(DesignColor.ink.opacity(0.45), lineWidth: 1)
+            )
+            .overlay(
+                Capsule()
+                    .fill(LinearGradient(colors: [DesignColor.agedParchment.opacity(0.18), DesignColor.agedParchment.opacity(0.02)], startPoint: .leading, endPoint: .trailing))
+                    .padding(4)
+            )
+    }
+
+    private func gearKnob(label: String) -> some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        gradient: Gradient(colors: [DesignColor.amberGlow.opacity(0.9), DesignColor.deepWalnut.opacity(0.9)]),
+                        center: .center,
+                        startRadius: 6,
+                        endRadius: knobDiameter / 2
+                    )
+                )
+                .overlay(
+                    Circle()
+                        .stroke(DesignColor.agedParchment.opacity(0.6), lineWidth: 3)
+                )
+
+            ForEach(0..<10, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .fill(DesignColor.agedParchment.opacity(0.95))
+                    .frame(width: 10, height: 24)
+                    .offset(y: -(knobDiameter / 2) + 8)
+                    .rotationEffect(.degrees(Double(index) / 10.0 * 360.0))
+                    .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 1)
+            }
+
+            Circle()
+                .fill(DesignColor.deepWalnut)
+                .frame(width: knobDiameter * 0.55)
+                .overlay(
+                    Circle()
+                        .stroke(DesignColor.agedParchment.opacity(0.6), lineWidth: 2)
+                )
+                .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 3)
+
+            Circle()
+                .strokeBorder(LinearGradient(colors: [DesignColor.aquaGlow, DesignColor.amberGlow], startPoint: .leading, endPoint: .trailing), lineWidth: 3)
+                .frame(width: knobDiameter * 0.68)
+                .blur(radius: 1.5)
+                .opacity(0.8)
+
+            Text(label)
+                .font(DesignTypography.Body.font.weight(.semibold))
+                .foregroundColor(DesignColor.agedParchment)
+                .shadow(color: Color.black.opacity(0.35), radius: 3, x: 0, y: 1)
+        }
+    }
+
+    private func labelColor(for index: Int) -> Color {
+        index == activeStop ? DesignColor.agedParchment : DesignColor.agedParchment.opacity(0.6)
+    }
+
+    private func tickColor(for index: Int) -> Color {
+        index == activeStop ? DesignColor.amberGlow.opacity(0.9) : DesignColor.agedParchment.opacity(0.45)
+    }
+
+    private func scheduleNextHop() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + hopInterval) {
+            guard isAnimating else { return }
+            withAnimation(.spring(response: 0.55, dampingFraction: 0.75, blendDuration: 0.4)) {
+                activeStop = (activeStop + 1) % stops.count
+            }
+            scheduleNextHop()
+        }
+    }
+}
+
 /// Placeholder particle system for future magical sparkles.
 struct StarParticles: View {
     private let count = 12
@@ -449,6 +635,15 @@ struct GearSlider_Previews: PreviewProvider {
         .padding()
         .background(DesignColor.deepWalnut)
         .previewLayout(.sizeThatFits)
+    }
+}
+
+struct DifficultyGearSlider_Previews: PreviewProvider {
+    static var previews: some View {
+        DifficultyGearSlider()
+            .padding()
+            .background(DesignColor.deepWalnut)
+            .previewLayout(.sizeThatFits)
     }
 }
 
