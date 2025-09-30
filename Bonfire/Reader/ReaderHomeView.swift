@@ -306,13 +306,13 @@ private enum LengthFilter: String, FilterOption {
 private struct ReaderShellView: View {
     let book: Book
 
-    @State private var selectedLevel: Level
+    @StateObject private var readerState: ReaderState
     @State private var selectedPageIndex: Int
     @State private var isLiquidGlassEnabled: Bool = false
 
     init(book: Book) {
         self.book = book
-        _selectedLevel = State(initialValue: book.level)
+        _readerState = StateObject(wrappedValue: ReaderState(book: book))
         _selectedPageIndex = State(initialValue: book.pages.first?.index ?? 1)
     }
 
@@ -320,7 +320,7 @@ private struct ReaderShellView: View {
         VStack(spacing: 0) {
             topBar
 
-            levelPicker
+            difficultyGear
                 .padding(.horizontal)
                 .padding(.top, 16)
 
@@ -389,18 +389,16 @@ private struct ReaderShellView: View {
         .padding(.top, 20)
     }
 
-    private var levelPicker: some View {
+    private var difficultyGear: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Reading Level")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
 
-            Picker("Reading Level", selection: $selectedLevel) {
-                ForEach(Level.allCases) { level in
-                    Text(level.rawValue).tag(level)
-                }
-            }
-            .pickerStyle(.segmented)
+            DifficultyGearControl(level: Binding(
+                get: { readerState.level },
+                set: { readerState.level = $0 }
+            ))
         }
     }
 
@@ -477,12 +475,230 @@ private struct ReaderShellView: View {
     }
 
     private func text(for page: Page) -> String {
-        if selectedLevel == book.level {
-            return page.text(for: selectedLevel)
+        let currentLevel = readerState.level
+
+        if currentLevel == book.level {
+            return page.text(for: currentLevel)
         }
 
-        let intro = "Level \(selectedLevel.rawValue) version coming soon."
-        return intro + "\n\n" + page.text(for: selectedLevel)
+        let intro = "Level \(currentLevel.rawValue) version coming soon."
+        return intro + "\n\n" + page.text(for: currentLevel)
+    }
+}
+
+private struct DifficultyGearControl: View {
+    @Binding var level: Level
+
+    @State private var activeIndex: Int = 0
+    @State private var gearRotation: Double = 0
+
+    private let levels = Level.allCases
+    private let knobSize: CGFloat = 92
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Difficulty Gear")
+                        .font(.headline)
+
+                    Text("Adjust the story to match your reading comfort.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text(level.rawValue)
+                    .font(.callout.weight(.semibold))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(Color.accentColor.opacity(0.15))
+                    )
+            }
+
+            HStack(alignment: .center, spacing: 24) {
+                sliderColumn
+                labelsColumn
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+        )
+        .onAppear { syncState(animated: false) }
+        .onChange(of: level) { _ in
+            syncState(animated: true)
+        }
+    }
+
+    private var sliderColumn: some View {
+        GeometryReader { proxy in
+            let travel = max(proxy.size.height - knobSize, 1)
+            let step = travel / CGFloat(max(levels.count - 1, 1))
+
+            ZStack(alignment: .top) {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.black.opacity(0.35),
+                                Color.black.opacity(0.15)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: 28)
+                    .frame(maxHeight: .infinity)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    )
+
+                ForEach(levels.indices, id: \.self) { index in
+                    tick(isActive: index == activeIndex)
+                        .offset(y: step * CGFloat(index))
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            select(levels[index])
+                        }
+                }
+
+                gearKnob
+                    .frame(width: knobSize, height: knobSize)
+                    .offset(y: step * CGFloat(activeIndex))
+                    .animation(.spring(response: 0.7, dampingFraction: 0.75, blendDuration: 0.25), value: activeIndex)
+                    .animation(.easeInOut(duration: 0.6), value: gearRotation)
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                let offset = min(max(value.location.y - knobSize / 2, 0), travel)
+                                let stepSize = step == 0 ? 1 : step
+                                let index = Int(round(offset / stepSize))
+                                let clampedIndex = min(max(index, 0), levels.count - 1)
+                                select(levels[clampedIndex])
+                            }
+                    )
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+        .frame(width: knobSize, height: 240)
+    }
+
+    private var labelsColumn: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(levels.indices, id: \.self) { index in
+                let option = levels[index]
+
+                Button {
+                    select(option)
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(option.rawValue)
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(index == activeIndex ? Color.primary : Color.secondary)
+
+                        Text(description(for: option))
+                            .font(.caption)
+                            .foregroundStyle(index == activeIndex ? Color.accentColor : Color.secondary.opacity(0.7))
+                    }
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+
+                if index != levels.count - 1 {
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .frame(height: 240, alignment: .top)
+    }
+
+    private func tick(isActive: Bool) -> some View {
+        Capsule()
+            .fill(Color.accentColor.opacity(isActive ? 0.8 : 0.25))
+            .frame(width: 36, height: 4)
+            .overlay(
+                Capsule()
+                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            )
+            .shadow(color: Color.accentColor.opacity(isActive ? 0.5 : 0), radius: 8, x: 0, y: 0)
+    }
+
+    private var gearKnob: some View {
+        ZStack {
+            Circle()
+                .fill(Color.accentColor.opacity(0.2))
+                .blur(radius: 14)
+
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.accentColor,
+                            Color.accentColor.opacity(0.75)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(0.4), lineWidth: 1)
+                )
+
+            Image(systemName: "gearshape.fill")
+                .font(.system(size: 32, weight: .semibold))
+                .foregroundColor(.white)
+                .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+        }
+        .rotationEffect(.degrees(gearRotation))
+        .shadow(color: .black.opacity(0.2), radius: 12, x: 0, y: 10)
+    }
+
+    private func select(_ newLevel: Level) {
+        guard newLevel != level else { return }
+        level = newLevel
+    }
+
+    private func description(for level: Level) -> String {
+        switch level {
+        case .a1:
+            return "Starter vocabulary"
+        case .a2:
+            return "Beginner comfort"
+        case .b1:
+            return "Growing confidence"
+        case .b2:
+            return "Advanced challenge"
+        }
+    }
+
+    private func syncState(animated: Bool) {
+        guard let index = levels.firstIndex(of: level) else { return }
+
+        let updates = {
+            activeIndex = index
+            gearRotation = Double(index) * 90
+        }
+
+        if animated {
+            withAnimation(.spring(response: 0.7, dampingFraction: 0.75, blendDuration: 0.25)) {
+                updates()
+            }
+        } else {
+            updates()
+        }
     }
 }
 
