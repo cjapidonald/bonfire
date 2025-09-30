@@ -236,6 +236,13 @@ struct DesignSystemDemoView: View {
                 }
 
                 VStack(alignment: .leading, spacing: DesignSpacing.md) {
+                    Text("Difficulty Gear Slider")
+                        .font(DesignTypography.Title.font)
+                        .foregroundColor(DesignColor.amberGlow)
+                    DifficultyGearSlider()
+                }
+
+                VStack(alignment: .leading, spacing: DesignSpacing.md) {
                     Text("Star Particles")
                         .font(DesignTypography.Title.font)
                         .foregroundColor(DesignColor.amberGlow)
