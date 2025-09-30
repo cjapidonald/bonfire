@@ -8,9 +8,16 @@ struct WordDetectingTextView: UIViewRepresentable {
         let boundingRects: [CGRect]
     }
 
+    struct WordToken: Identifiable, Equatable {
+        let id: String
+        let selection: WordSelection
+        let frame: CGRect
+    }
+
     var text: String
     var onSingleTap: (WordSelection) -> Void
     var onDoubleTap: (WordSelection) -> Void
+    var onTokensUpdate: ([WordToken]) -> Void = { _ in }
 
     func makeUIView(context: Context) -> WordMappedTextView {
         let textView = WordMappedTextView()
@@ -28,6 +35,9 @@ struct WordDetectingTextView: UIViewRepresentable {
         }
         textView.onDoubleTap = { token in
             context.coordinator.handleDoubleTap(token)
+        }
+        textView.onTokensUpdate = { tokens in
+            context.coordinator.handleTokensUpdate(tokens)
         }
         return textView
     }
@@ -63,6 +73,10 @@ struct WordDetectingTextView: UIViewRepresentable {
         func handleDoubleTap(_ token: WordMappedTextView.Token) {
             parent.onDoubleTap(token.selection)
         }
+
+        func handleTokensUpdate(_ tokens: [WordToken]) {
+            parent.onTokensUpdate(tokens)
+        }
     }
 }
 
@@ -84,6 +98,7 @@ final class WordMappedTextView: UITextView {
 
     var onSingleTap: ((Token) -> Void)?
     var onDoubleTap: ((Token) -> Void)?
+    var onTokensUpdate: (([WordDetectingTextView.WordToken]) -> Void)?
 
     private var tokens: [Token] = []
     private var needsBoundingBoxUpdate: Bool = false
@@ -191,6 +206,7 @@ final class WordMappedTextView: UITextView {
         }
 
         needsBoundingBoxUpdate = false
+        emitTokens()
     }
 
     @objc private func handleSingleTap(_ recognizer: UITapGestureRecognizer) {
@@ -218,6 +234,34 @@ final class WordMappedTextView: UITextView {
             }
         }
         return nil
+    }
+
+    private func emitTokens() {
+        let snapshots: [WordDetectingTextView.WordToken] = tokens.map { token in
+            let frame = token.boundingRects.reduce(into: CGRect.null) { partialResult, rect in
+                if partialResult.isNull {
+                    partialResult = rect
+                } else {
+                    partialResult = partialResult.union(rect)
+                }
+            }
+
+            let resolvedFrame: CGRect
+            if frame.isNull {
+                resolvedFrame = .zero
+            } else {
+                resolvedFrame = frame
+            }
+
+            let identifier = "\(token.range.location)-\(token.range.length)"
+            return WordDetectingTextView.WordToken(
+                id: identifier,
+                selection: token.selection,
+                frame: resolvedFrame
+            )
+        }
+
+        onTokensUpdate?(snapshots)
     }
 }
 

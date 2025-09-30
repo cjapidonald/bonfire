@@ -313,6 +313,9 @@ private struct ReaderShellView: View {
     @State private var lastWordInteractionDescription: String?
     @ObservedObject private var vocabularyStore = VocabularyStore.shared
     @State private var activePopover: WordPopoverPresentation?
+    @State private var totalWordsCounted: Int = 0
+    @State private var pageUniqueWordSets: [Int: Set<String>] = [:]
+    @State private var lastCountTimestamps: [String: Date] = [:]
 
     private let translationProvider = WordTranslationProvider.shared
 
@@ -431,6 +434,9 @@ private struct ReaderShellView: View {
                     onDoubleTap: { selection in
                         handleDoubleTap(on: page, selection: selection)
                     },
+                    onWordCounted: { selection in
+                        handleWordCounted(on: page.index, selection: selection)
+                    },
                     onAddToVocabulary: { presentation in
                         addWordToVocabulary(from: presentation, source: "popover")
                     }
@@ -468,6 +474,15 @@ private struct ReaderShellView: View {
         VStack(spacing: 12) {
             Divider()
 
+            if isLiquidGlassEnabled {
+                LiquidGlassSessionSummary(
+                    totalCount: totalWordsCounted,
+                    uniqueCount: uniqueWordsOnCurrentPageCount
+                )
+                .padding(.horizontal)
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+
             HStack(spacing: 12) {
                 ReaderControlButton(title: "Record", systemImage: "record.circle")
                     .disabled(true)
@@ -493,6 +508,7 @@ private struct ReaderShellView: View {
             .padding(.horizontal)
             .padding(.bottom, 16)
         }
+        .animation(.spring(response: 0.35, dampingFraction: 0.85, blendDuration: 0.2), value: isLiquidGlassEnabled)
     }
 
     private var currentPagePosition: Int {
@@ -505,6 +521,10 @@ private struct ReaderShellView: View {
     private var readingProgress: Double {
         guard !book.pages.isEmpty else { return 0 }
         return Double(currentPagePosition) / Double(book.pages.count)
+    }
+
+    private var uniqueWordsOnCurrentPageCount: Int {
+        pageUniqueWordSets[selectedPageIndex]?.count ?? 0
     }
 
     private func text(for page: Page) -> String {
@@ -546,6 +566,29 @@ private struct ReaderShellView: View {
         )
 
         addWordToVocabulary(from: presentation, source: "double_tap")
+    }
+
+    private func handleWordCounted(on pageIndex: Int, selection: WordDetectingTextView.WordSelection) -> Bool {
+        guard isLiquidGlassEnabled else { return false }
+        guard pageIndex == selectedPageIndex else { return false }
+
+        let normalizedKey = selection.normalized.lowercased()
+        let now = Date()
+
+        if let last = lastCountTimestamps[normalizedKey], now.timeIntervalSince(last) < 3 {
+            return false
+        }
+
+        lastCountTimestamps[normalizedKey] = now
+        totalWordsCounted += 1
+
+        var uniqueSet = pageUniqueWordSets[pageIndex] ?? []
+        uniqueSet.insert(normalizedKey)
+        pageUniqueWordSets[pageIndex] = uniqueSet
+
+        lastWordInteractionDescription = "✨ Counted “\(selection.original)” • Words: \(totalWordsCounted) • Unique this page: \(uniqueSet.count)"
+
+        return true
     }
 
     private func addWordToVocabulary(from presentation: WordPopoverPresentation, source: String) {
@@ -839,6 +882,7 @@ private struct BookSpreadView: View {
     var isLiquidGlassEnabled: Bool
     var onSingleTap: (WordDetectingTextView.WordSelection) -> Void = { _ in }
     var onDoubleTap: (WordDetectingTextView.WordSelection) -> Void = { _ in }
+    var onWordCounted: (WordDetectingTextView.WordSelection) -> Bool = { _ in false }
     var onAddToVocabulary: (WordPopoverPresentation) -> Void = { _ in }
 
     var body: some View {
@@ -863,7 +907,8 @@ private struct BookSpreadView: View {
                         isLiquidGlassEnabled: isLiquidGlassEnabled,
                         onSingleTap: onSingleTap,
                         onDoubleTap: onDoubleTap,
-                        onAddToVocabulary: onAddToVocabulary
+                        onAddToVocabulary: onAddToVocabulary,
+                        onWordCounted: onWordCounted
                     )
                 }
                 .frame(width: spreadWidth / 2)
@@ -930,6 +975,7 @@ private struct RightPageContent: View {
     var onSingleTap: (WordDetectingTextView.WordSelection) -> Void
     var onDoubleTap: (WordDetectingTextView.WordSelection) -> Void
     var onAddToVocabulary: (WordPopoverPresentation) -> Void
+    var onWordCounted: (WordDetectingTextView.WordSelection) -> Bool
 
     @State private var textViewSize: CGSize = .zero
     @State private var popoverSize: CGSize = .zero
@@ -937,14 +983,25 @@ private struct RightPageContent: View {
     @State private var glassSize: CGSize = .zero
     @State private var isGlassInitialized: Bool = false
     @State private var isDraggingGlass: Bool = false
-    @State private var dragStartOrigin: CGPoint = .zero
+    @State private var dragStartToken: WordDetectingTextView.WordToken?
+    @State private var dragStartCenter: CGPoint?
+    @State private var wordTokens: [WordDetectingTextView.WordToken] = []
+    @State private var currentToken: WordDetectingTextView.WordToken?
+    @State private var dwellTask: Task<Void, Never>?
+    @State private var activeStarburstID: UUID?
+
+    private let horizontalPadding: CGFloat = 18
+    private let verticalPadding: CGFloat = 12
+    private let minimumGlassHeight: CGFloat = 80
+    private let minimumGlassWidth: CGFloat = 96
 
     var body: some View {
         ScrollView {
             WordDetectingTextView(
                 text: text,
                 onSingleTap: onSingleTap,
-                onDoubleTap: onDoubleTap
+                onDoubleTap: onDoubleTap,
+                onTokensUpdate: handleTokensUpdate
             )
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
@@ -955,29 +1012,51 @@ private struct RightPageContent: View {
             .overlay(alignment: .topLeading) {
                 ZStack(alignment: .topLeading) {
                     if isLiquidGlassEnabled, glassSize != .zero {
-                        LiquidGlassBlobView(size: glassSize, isDragging: isDraggingGlass)
-                            .offset(x: glassOrigin.x, y: glassOrigin.y)
-                            .gesture(
-                                DragGesture()
-                                    .onChanged { value in
-                                        if !isDraggingGlass {
-                                            isDraggingGlass = true
-                                            dragStartOrigin = glassOrigin
-                                        }
+                        ZStack {
+                            LiquidGlassBlobView(size: glassSize, isDragging: isDraggingGlass)
+                                .accessibilityHidden(true)
 
-                                        let proposed = CGPoint(
-                                            x: dragStartOrigin.x + value.translation.width,
-                                            y: dragStartOrigin.y + value.translation.height
-                                        )
+                            if let starburstID = activeStarburstID {
+                                StarburstView(triggerID: starburstID)
+                                    .frame(width: glassSize.width * 1.15, height: glassSize.height * 1.15)
+                                    .allowsHitTesting(false)
+                                    .transition(.opacity)
+                            }
+                        }
+                        .offset(x: glassOrigin.x, y: glassOrigin.y)
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { value in
+                                    guard isLiquidGlassEnabled else { return }
 
-                                        glassOrigin = clampedOrigin(for: proposed, in: textViewSize, blobSize: glassSize)
+                                    if !isDraggingGlass {
+                                        isDraggingGlass = true
+                                        dragStartToken = currentToken ?? wordTokens.first
+                                        dragStartCenter = dragStartToken?.frame.center ?? CGPoint(x: glassOrigin.x + glassSize.width / 2, y: glassOrigin.y + glassSize.height / 2)
                                     }
-                                    .onEnded { _ in
-                                        isDraggingGlass = false
+
+                                    guard let startToken = dragStartToken else { return }
+                                    let startCenter = dragStartCenter ?? startToken.frame.center
+
+                                    var proposedPoint = CGPoint(
+                                        x: startCenter.x + value.translation.width,
+                                        y: startCenter.y + value.translation.height
+                                    )
+
+                                    proposedPoint.x = max(0, min(proposedPoint.x, textViewSize.width))
+                                    proposedPoint.y = max(0, min(proposedPoint.y, textViewSize.height))
+
+                                    if let target = token(near: proposedPoint) {
+                                        snap(to: target, reason: .userInteraction, animated: false)
                                     }
-                            )
-                            .accessibilityHidden(true)
-                            .transition(.opacity.combined(with: .scale))
+                                }
+                                .onEnded { _ in
+                                    isDraggingGlass = false
+                                    dragStartToken = nil
+                                    dragStartCenter = nil
+                                }
+                        )
+                        .transition(.opacity.combined(with: .scale))
                     }
 
                     if let presentation = activePopover, presentation.pageIndex == pageIndex {
@@ -1000,18 +1079,21 @@ private struct RightPageContent: View {
         .scrollIndicators(.hidden)
         .animation(.spring(response: 0.4, dampingFraction: 0.85, blendDuration: 0.15), value: activePopover?.id)
         .onChange(of: textViewSize) { newSize in
-            synchronizeGlassFrame(with: newSize)
+            synchronizeGlassFrame(with: wordTokens, containerSize: newSize)
         }
         .onChange(of: isLiquidGlassEnabled) { isEnabled in
             if isEnabled {
-                synchronizeGlassFrame(with: textViewSize)
+                synchronizeGlassFrame(with: wordTokens, containerSize: textViewSize, animate: true)
             } else {
                 isDraggingGlass = false
+                cancelDwellTask()
+                activeStarburstID = nil
             }
         }
         .onAppear {
-            synchronizeGlassFrame(with: textViewSize)
+            synchronizeGlassFrame(with: wordTokens, containerSize: textViewSize)
         }
+        .onDisappear { cancelDwellTask() }
     }
 
     private func popoverOffset(for presentation: WordPopoverPresentation) -> CGSize {
@@ -1040,38 +1122,6 @@ private struct RightPageContent: View {
         return CGSize(width: clampedX, height: y)
     }
 
-    private func synchronizeGlassFrame(with textSize: CGSize) {
-        guard textSize != .zero else { return }
-
-        let preferredSize = preferredGlassSize(for: textSize)
-        glassSize = preferredSize
-
-        if !isGlassInitialized {
-            glassOrigin = initialGlassOrigin(for: textSize, blobSize: preferredSize)
-            isGlassInitialized = true
-        } else {
-            glassOrigin = clampedOrigin(for: glassOrigin, in: textSize, blobSize: preferredSize)
-        }
-    }
-
-    private func preferredGlassSize(for textSize: CGSize) -> CGSize {
-        guard textSize != .zero else { return .zero }
-
-        let maxWidth = textSize.width
-        let width = min(max(maxWidth * 0.45, 140), maxWidth)
-        let height = min(max(width * 0.6, 100), textSize.height)
-
-        return CGSize(width: width, height: height)
-    }
-
-    private func initialGlassOrigin(for textSize: CGSize, blobSize: CGSize) -> CGPoint {
-        let x = max((textSize.width - blobSize.width) / 2, 0)
-        let targetY = textSize.height * 0.25 - blobSize.height / 2
-        let y = max(0, min(targetY, max(0, textSize.height - blobSize.height)))
-
-        return CGPoint(x: x, y: y)
-    }
-
     private func clampedOrigin(for origin: CGPoint, in textSize: CGSize, blobSize: CGSize) -> CGPoint {
         let maxX = max(0, textSize.width - blobSize.width)
         let maxY = max(0, textSize.height - blobSize.height)
@@ -1080,6 +1130,155 @@ private struct RightPageContent: View {
         let clampedY = min(max(origin.y, 0), maxY)
 
         return CGPoint(x: clampedX, y: clampedY)
+    }
+
+    private func handleTokensUpdate(_ tokens: [WordDetectingTextView.WordToken]) {
+        wordTokens = tokens.filter { !$0.frame.isEmpty }
+        synchronizeGlassFrame(with: wordTokens, containerSize: textViewSize)
+    }
+
+    private func synchronizeGlassFrame(
+        with tokens: [WordDetectingTextView.WordToken],
+        containerSize: CGSize,
+        animate: Bool = false
+    ) {
+        guard containerSize != .zero else { return }
+
+        if let current = currentToken,
+           let updated = tokens.first(where: { $0.id == current.id }) {
+            snap(to: updated, reason: .layoutSync, animated: animate)
+        } else if isLiquidGlassEnabled, let first = tokens.first {
+            snap(to: first, reason: isGlassInitialized ? .layoutSync : .initialization, animated: animate)
+        } else if tokens.isEmpty {
+            glassSize = .zero
+            glassOrigin = .zero
+            currentToken = nil
+            isGlassInitialized = false
+        }
+    }
+
+    private enum SnapReason {
+        case initialization
+        case layoutSync
+        case userInteraction
+    }
+
+    private func snap(
+        to token: WordDetectingTextView.WordToken,
+        reason: SnapReason,
+        animated: Bool
+    ) {
+        guard textViewSize != .zero else { return }
+        guard !token.frame.isEmpty else { return }
+
+        let paddedFrame = token.frame.insetBy(dx: -horizontalPadding, dy: -verticalPadding)
+        var targetWidth = max(paddedFrame.width, token.frame.width + horizontalPadding * 2)
+        var targetHeight = max(paddedFrame.height, token.frame.height + verticalPadding * 2)
+
+        targetWidth = min(max(targetWidth, minimumGlassWidth), textViewSize.width)
+        targetHeight = min(max(targetHeight, minimumGlassHeight), textViewSize.height)
+
+        let rawOrigin = CGPoint(
+            x: paddedFrame.origin.x,
+            y: token.frame.midY - targetHeight / 2
+        )
+
+        let adjustedOrigin = clampedOrigin(
+            for: rawOrigin,
+            in: textViewSize,
+            blobSize: CGSize(width: targetWidth, height: targetHeight)
+        )
+
+        let previousID = currentToken?.id
+        let updateState = {
+            glassSize = CGSize(width: targetWidth, height: targetHeight)
+            glassOrigin = adjustedOrigin
+            currentToken = token
+            isGlassInitialized = true
+        }
+
+        if animated {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.82, blendDuration: 0.2)) {
+                updateState()
+            }
+        } else {
+            updateState()
+        }
+
+        if reason == .userInteraction, previousID != token.id {
+            scheduleDwell(for: token)
+        }
+    }
+
+    private func scheduleDwell(for token: WordDetectingTextView.WordToken) {
+        dwellTask?.cancel()
+
+        dwellTask = Task { [selection = token.selection, tokenID = token.id] in
+            try await Task.sleep(nanoseconds: 300_000_000)
+
+            guard !Task.isCancelled else { return }
+
+            await MainActor.run {
+                guard isLiquidGlassEnabled else { return }
+                guard currentToken?.id == tokenID else { return }
+
+                if onWordCounted(selection) {
+                    triggerStarburst()
+                }
+            }
+        }
+    }
+
+    private func cancelDwellTask() {
+        dwellTask?.cancel()
+        dwellTask = nil
+    }
+
+    private func token(near point: CGPoint) -> WordDetectingTextView.WordToken? {
+        let tokens = wordTokens.filter { !$0.frame.isEmpty }
+        guard !tokens.isEmpty else { return nil }
+
+        let verticalTolerance: CGFloat = 10
+        let containing = tokens.filter {
+            $0.frame.insetBy(dx: 0, dy: -verticalTolerance).contains(point)
+        }
+
+        if let match = containing.min(by: { abs($0.frame.midX - point.x) < abs($1.frame.midX - point.x) }) {
+            return match
+        }
+
+        let sameLine = tokens.filter {
+            abs($0.frame.midY - point.y) <= ($0.frame.height / 2 + verticalTolerance)
+        }
+
+        if let match = sameLine.min(by: { abs($0.frame.midX - point.x) < abs($1.frame.midX - point.x) }) {
+            return match
+        }
+
+        return tokens.min { lhs, rhs in
+            distanceSquared(lhs.frame.center, point) < distanceSquared(rhs.frame.center, point)
+        }
+    }
+
+    private func triggerStarburst() {
+        let newID = UUID()
+        withAnimation(.easeOut(duration: 0.2)) {
+            activeStarburstID = newID
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.65) {
+            if activeStarburstID == newID {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    activeStarburstID = nil
+                }
+            }
+        }
+    }
+
+    private func distanceSquared(_ lhs: CGPoint, _ rhs: CGPoint) -> CGFloat {
+        let dx = lhs.x - rhs.x
+        let dy = lhs.y - rhs.y
+        return dx * dx + dy * dy
     }
 }
 
@@ -1187,6 +1386,48 @@ private struct LiquidGlassBlobView: View {
     }
 }
 
+private struct StarburstView: View {
+    let triggerID: UUID
+
+    @State private var animate: Bool = false
+
+    var body: some View {
+        ZStack {
+            ForEach(0..<6, id: \.self) { index in
+                let angle = Double(index) / 6.0 * (.pi * 2)
+                let radius: CGFloat = index.isMultiple(of: 2) ? 28 : 20
+                let symbolSize: CGFloat = index.isMultiple(of: 2) ? 18 : 14
+
+                Image(systemName: "sparkle")
+                    .font(.system(size: symbolSize, weight: .semibold))
+                    .foregroundStyle(Color.yellow.opacity(0.85))
+                    .scaleEffect(animate ? 1 : 0.4)
+                    .opacity(animate ? 0 : 1)
+                    .offset(
+                        x: animate ? CGFloat(cos(angle)) * radius : 0,
+                        y: animate ? CGFloat(sin(angle)) * radius : 0
+                    )
+                    .blendMode(.plusLighter)
+                    .animation(.easeOut(duration: 0.55), value: animate)
+            }
+
+            Image(systemName: "sparkles")
+                .font(.system(size: 22))
+                .foregroundStyle(Color.yellow.opacity(0.75))
+                .scaleEffect(animate ? 1.35 : 1)
+                .opacity(animate ? 0 : 0.85)
+                .blendMode(.plusLighter)
+                .animation(.easeOut(duration: 0.5), value: animate)
+        }
+        .id(triggerID)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.6)) {
+                animate = true
+            }
+        }
+    }
+}
+
 private struct WordTranslationPopover: View {
     let presentation: WordPopoverPresentation
     var onAdd: () -> Void
@@ -1243,6 +1484,49 @@ private struct WordTranslationPopover: View {
                 .fill(Color(uiColor: .systemBackground))
         )
         .shadow(color: Color.black.opacity(0.18), radius: 18, x: 0, y: 12)
+    }
+}
+
+private struct LiquidGlassSessionSummary: View {
+    let totalCount: Int
+    let uniqueCount: Int
+
+    var body: some View {
+        HStack(spacing: 20) {
+            metric(symbol: "sparkle", title: "Words Counted", value: totalCount)
+
+            Divider()
+                .frame(width: 1, height: 32)
+                .background(Color.primary.opacity(0.08))
+
+            metric(symbol: "text.book.closed", title: "Unique on Page", value: uniqueCount)
+
+            Spacer()
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.accentColor.opacity(0.08))
+        )
+    }
+
+    private func metric(symbol: String, title: String, value: Int) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Color.accentColor)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Text("\(value)")
+                    .font(.headline.monospacedDigit())
+                    .foregroundStyle(.primary)
+            }
+        }
     }
 }
 
@@ -1338,6 +1622,12 @@ private struct ProgressRing: View {
                 .monospacedDigit()
         }
         .frame(width: 56, height: 56)
+    }
+}
+
+private extension CGRect {
+    var center: CGPoint {
+        CGPoint(x: midX, y: midY)
     }
 }
 
