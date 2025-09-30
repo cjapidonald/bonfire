@@ -9,6 +9,7 @@ struct DesignSystemDemoView: View {
                 spacingSection
                 cornerRadiusSection
                 textureSection
+                componentSection
             }
             .padding(DesignSpacing.xl)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -179,6 +180,78 @@ struct DesignSystemDemoView: View {
             .font(DesignTypography.Title.font)
             .foregroundColor(DesignColor.amberGlow)
             .padding(.bottom, DesignSpacing.sm)
+    }
+
+    private var componentSection: some View {
+        VStack(alignment: .leading, spacing: DesignSpacing.lg) {
+            sectionHeader("Visual Shell Components")
+
+            VStack(alignment: .leading, spacing: DesignSpacing.lg) {
+                WoodCard {
+                    VStack(alignment: .leading, spacing: DesignSpacing.sm) {
+                        Text("Wood Card")
+                            .font(DesignTypography.Title.font)
+                            .foregroundColor(DesignColor.agedParchment)
+                        Text("Rich wood grain container for hero moments and featured actions.")
+                            .font(DesignTypography.Body.font)
+                            .foregroundColor(DesignColor.agedParchment.opacity(0.9))
+                        GlowButton(title: "Equip Relic", icon: "wand.and.sparkles", style: .aqua)
+                    }
+                }
+
+                ParchmentPage {
+                    VStack(alignment: .leading, spacing: DesignSpacing.md) {
+                        Text("Parchment Page")
+                            .font(DesignTypography.Title.font)
+                            .foregroundColor(DesignColor.ink)
+                        Text("Use for lore entries and long-form reading surfaces.")
+                            .font(DesignTypography.Body.font)
+                            .foregroundColor(DesignColor.ink.opacity(0.8))
+                        ProgressRing(progress: 0.72)
+                            .frame(width: 120)
+                            .padding(.top, DesignSpacing.md)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: DesignSpacing.lg) {
+                    Text("Badge Tiles")
+                        .font(DesignTypography.Title.font)
+                        .foregroundColor(DesignColor.amberGlow)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: DesignSpacing.lg) {
+                            BadgeTile(title: "Lore Master", subtitle: "Unlocked", state: .unlocked)
+                                .frame(width: 180)
+                            BadgeTile(title: "Trailblazer", subtitle: "Unlock by mapping every realm", state: .locked)
+                                .frame(width: 180)
+                        }
+                        .padding(.horizontal, DesignSpacing.sm)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: DesignSpacing.md) {
+                    Text("Gear Slider")
+                        .font(DesignTypography.Title.font)
+                        .foregroundColor(DesignColor.amberGlow)
+                    GearSlider(value: 0.6)
+                }
+
+                VStack(alignment: .leading, spacing: DesignSpacing.md) {
+                    Text("Star Particles")
+                        .font(DesignTypography.Title.font)
+                        .foregroundColor(DesignColor.amberGlow)
+                    StarParticles()
+                }
+            }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: DesignCornerRadius.card)
+                    .fill(DesignColor.deepWalnut.opacity(0.6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignCornerRadius.card)
+                            .stroke(DesignColor.ink.opacity(0.15), lineWidth: 1)
+                    )
+            )
+        }
     }
 }
 
