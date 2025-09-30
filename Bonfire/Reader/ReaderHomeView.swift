@@ -309,6 +309,7 @@ private struct ReaderShellView: View {
     @StateObject private var readerState: ReaderState
     @State private var selectedPageIndex: Int
     @State private var isLiquidGlassEnabled: Bool = false
+    @State private var lastWordInteractionDescription: String?
 
     init(book: Book) {
         self.book = book
@@ -331,6 +332,15 @@ private struct ReaderShellView: View {
             pageIndicator
                 .padding(.horizontal)
                 .padding(.top, 12)
+
+            if let interactionDescription = lastWordInteractionDescription {
+                Text(interactionDescription)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+            }
 
             Spacer(minLength: 24)
 
@@ -405,9 +415,17 @@ private struct ReaderShellView: View {
     private var bookViewport: some View {
         TabView(selection: $selectedPageIndex) {
             ForEach(book.pages) { page in
-                BookSpreadView(rightPageText: text(for: page))
-                    .padding(.vertical, 8)
-                    .tag(page.index)
+                BookSpreadView(
+                    rightPageText: text(for: page),
+                    onSingleTap: { selection in
+                        lastWordInteractionDescription = "Tapped \"\(selection.original)\" → \(selection.normalized)"
+                    },
+                    onDoubleTap: { selection in
+                        lastWordInteractionDescription = "Double-tapped \"\(selection.original)\" → \(selection.normalized)"
+                    }
+                )
+                .padding(.vertical, 8)
+                .tag(page.index)
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
@@ -704,6 +722,8 @@ private struct DifficultyGearControl: View {
 
 private struct BookSpreadView: View {
     let rightPageText: String
+    var onSingleTap: (WordDetectingTextView.WordSelection) -> Void = { _ in }
+    var onDoubleTap: (WordDetectingTextView.WordSelection) -> Void = { _ in }
 
     var body: some View {
         GeometryReader { geometry in
@@ -720,7 +740,11 @@ private struct BookSpreadView: View {
                     .frame(width: 1, height: geometry.size.height * 0.8)
 
                 BookPageContainer {
-                    RightPageContent(text: rightPageText)
+                    RightPageContent(
+                        text: rightPageText,
+                        onSingleTap: onSingleTap,
+                        onDoubleTap: onDoubleTap
+                    )
                 }
                 .frame(width: spreadWidth / 2)
             }
@@ -780,14 +804,17 @@ private struct ArtworkPlaceholder: View {
 
 private struct RightPageContent: View {
     let text: String
+    var onSingleTap: (WordDetectingTextView.WordSelection) -> Void
+    var onDoubleTap: (WordDetectingTextView.WordSelection) -> Void
 
     var body: some View {
         ScrollView {
-            Text(text)
-                .font(.body)
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.leading)
-                .padding(.vertical, 8)
+            WordDetectingTextView(
+                text: text,
+                onSingleTap: onSingleTap,
+                onDoubleTap: onDoubleTap
+            )
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .scrollIndicators(.hidden)
     }
