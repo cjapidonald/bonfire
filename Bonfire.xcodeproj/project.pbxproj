@@ -24,6 +24,8 @@ E4F1A2BB3F524B6F8D5E2D6A /* ReaderView.swift in Sources */ = {isa = PBXBuildFile
 E4F1A2BD3F524B6F8D5E2D6A /* ContentModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4F1A2BC3F524B6F8D5E2D6A /* ContentModels.swift */; };
 E4F1A2BF3F524B6F8D5E2D6A /* ContentProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4F1A2BE3F524B6F8D5E2D6A /* ContentProvider.swift */; };
 E4F1A2C13F524B6F8D5E2D6A /* the_little_river_lantern.json in Resources */ = {isa = PBXBuildFile; fileRef = E4F1A2C03F524B6F8D5E2D6A /* the_little_river_lantern.json */; };
+2EED82E675174DA6B1DDFD86 /* AnalyticsLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E667AE385C424C8B952BA4 /* AnalyticsLogger.swift */; };
+73C9E4BF8C89471BB5CF420B /* ReaderState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D594A8F68EB9418B84BD3573 /* ReaderState.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -56,9 +58,11 @@ E27E89ECE96D4BCB921D923D /* DesignSystemCorners.swift */ = {isa = PBXFileReferen
 1BB861349D224469A8F68B9E /* DesignSystemTextures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystemTextures.swift; sourceTree = "<group>"; };
 D7985B135AE74DCFAF5788BC /* DesignSystemDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystemDemoView.swift; sourceTree = "<group>"; };
 4D53F3158A1B4C73A4E4F4BA /* DesignSystemVisualShells.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components/DesignSystemVisualShells.swift; sourceTree = "<group>"; };
+D1E667AE385C424C8B952BA4 /* AnalyticsLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsLogger.swift; sourceTree = "<group>"; };
 E4F1A2B83F524B6F8D5E2D6A /* ReaderHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderHomeView.swift; sourceTree = "<group>"; };
 E4F1A2BA3F524B6F8D5E2D6A /* ReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
 E4F1A2BC3F524B6F8D5E2D6A /* ContentModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/ContentModels.swift; sourceTree = "<group>"; };
+D594A8F68EB9418B84BD3573 /* ReaderState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/ReaderState.swift; sourceTree = "<group>"; };
 E4F1A2BE3F524B6F8D5E2D6A /* ContentProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Content/ContentProvider.swift; sourceTree = "<group>"; };
 E4F1A2C03F524B6F8D5E2D6A /* the_little_river_lantern.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Content/the_little_river_lantern.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -143,6 +147,7 @@ E4F1A2C23F524B6F8D5E2D6A /* Models */ = {
     isa = PBXGroup;
     children = (
         E4F1A2BC3F524B6F8D5E2D6A /* ContentModels.swift */,
+        D594A8F68EB9418B84BD3573 /* ReaderState.swift */,
     );
     path = Models;
     sourceTree = "<group>";
@@ -217,12 +222,13 @@ path = Dictionary;
 sourceTree = "<group>";
 };
 24B1E40C2B1ED1E200D9D1A8 /* Analytics */ = {
-isa = PBXGroup;
-children = (
-24B1E4382B1ED1E200D9D1A8 /* .gitkeep */,
-);
-path = Analytics;
-sourceTree = "<group>";
+    isa = PBXGroup;
+    children = (
+        D1E667AE385C424C8B952BA4 /* AnalyticsLogger.swift */,
+        24B1E4382B1ED1E200D9D1A8 /* .gitkeep */,
+    );
+    path = Analytics;
+    sourceTree = "<group>";
 };
 24B1E40D2B1ED1E200D9D1A8 /* Utilities */ = {
 isa = PBXGroup;
@@ -346,10 +352,12 @@ CD1399DE866B4DE78DFD9FFE /* DesignSystemDemoView.swift in Sources */,
 A1E95B6B65A544A2B5B0D4F1 /* DesignSystemVisualShells.swift in Sources */,
 E4F1A2B93F524B6F8D5E2D6A /* ReaderHomeView.swift in Sources */,
 E4F1A2BB3F524B6F8D5E2D6A /* ReaderView.swift in Sources */,
-E4F1A2BD3F524B6F8D5E2D6A /* ContentModels.swift in Sources */,
-E4F1A2BF3F524B6F8D5E2D6A /* ContentProvider.swift in Sources */,
-24B1E4182B1ED1E200D9D1A8 /* RootTabView.swift in Sources */,
-24B1E4172B1ED1E200D9D1A8 /* BonfireApp.swift in Sources */,
+        E4F1A2BD3F524B6F8D5E2D6A /* ContentModels.swift in Sources */,
+        73C9E4BF8C89471BB5CF420B /* ReaderState.swift in Sources */,
+        E4F1A2BF3F524B6F8D5E2D6A /* ContentProvider.swift in Sources */,
+        2EED82E675174DA6B1DDFD86 /* AnalyticsLogger.swift in Sources */,
+        24B1E4182B1ED1E200D9D1A8 /* RootTabView.swift in Sources */,
+        24B1E4172B1ED1E200D9D1A8 /* BonfireApp.swift in Sources */,
 );
 runOnlyForDeploymentPostprocessing = 0;
 };
