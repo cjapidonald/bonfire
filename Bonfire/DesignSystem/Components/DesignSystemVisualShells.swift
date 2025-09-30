@@ -298,6 +298,242 @@ struct GearSlider: View {
     }
 }
 
+/// A vertical gear slider that animates across four labelled stops.
+struct DifficultyGearSlider: View {
+    private let stops: [String] = ["A1", "A2", "B1", "B2"]
+    @State private var activeIndex: Int = 0
+    @State private var gearRotation: Double = 0
+
+    private let knobSize: CGFloat = 96
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DesignSpacing.md) {
+            Text("Difficulty Gear")
+                .font(DesignTypography.Title.font)
+                .foregroundColor(DesignColor.agedParchment)
+                .shadow(color: Color.black.opacity(0.45), radius: 6, x: 0, y: 2)
+
+            HStack(alignment: .center, spacing: DesignSpacing.xl) {
+                sliderColumn
+                labelsColumn
+            }
+        }
+        .padding(DesignSpacing.xl)
+        .frame(width: 340, height: 360)
+        .background(
+            RoundedRectangle(cornerRadius: DesignCornerRadius.card, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            DesignColor.deepWalnut.opacity(0.95),
+                            DesignColor.deepWalnut.opacity(0.75)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay(
+                    DesignTexture.wood.preview
+                        .opacity(0.35)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignCornerRadius.card, style: .continuous))
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignCornerRadius.card, style: .continuous)
+                .stroke(DesignColor.ink.opacity(0.35), lineWidth: 1)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignCornerRadius.card, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .task {
+            guard stops.count > 1 else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 2_100_000_000)
+                await MainActor.run {
+                    let nextIndex = (activeIndex + 1) % stops.count
+                    withAnimation(.spring(response: 0.9, dampingFraction: 0.65, blendDuration: 0.3)) {
+                        activeIndex = nextIndex
+                        gearRotation += 90
+                    }
+                }
+            }
+        }
+    }
+
+    private var sliderColumn: some View {
+        GeometryReader { proxy in
+            let travel = max(proxy.size.height - knobSize, 1)
+            let step = travel / CGFloat(max(stops.count - 1, 1))
+
+            ZStack(alignment: .top) {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                DesignColor.ink.opacity(0.85),
+                                DesignColor.ink.opacity(0.45)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: 28)
+                    .frame(maxHeight: .infinity)
+                    .shadow(color: Color.black.opacity(0.5), radius: 18, x: 0, y: 12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(DesignColor.agedParchment.opacity(0.2), lineWidth: 1)
+                    )
+
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(DesignColor.aquaGlow.opacity(0.35), lineWidth: 1.2)
+                    .blur(radius: 8)
+                    .frame(width: 46)
+                    .offset(y: -8)
+                    .opacity(0.35)
+
+                ForEach(stops.indices, id: \.self) { index in
+                    tick(isActive: index == activeIndex)
+                        .offset(y: step * CGFloat(index))
+                }
+
+                gearKnob(rotation: gearRotation)
+                    .frame(width: knobSize, height: knobSize)
+                    .offset(y: step * CGFloat(activeIndex))
+                    .animation(.spring(response: 0.9, dampingFraction: 0.65, blendDuration: 0.3), value: activeIndex)
+                    .animation(.easeInOut(duration: 0.8), value: gearRotation)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+        .frame(width: knobSize, height: 280)
+    }
+
+    private var labelsColumn: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(stops.indices, id: \.self) { index in
+                stopLabel(for: stops[index], isActive: index == activeIndex)
+                if index != stops.count - 1 {
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .frame(height: 280)
+    }
+
+    @ViewBuilder
+    private func tick(isActive: Bool) -> some View {
+        ZStack {
+            Capsule()
+                .fill(DesignColor.agedParchment.opacity(isActive ? 0.95 : 0.45))
+                .frame(width: 40, height: 4)
+                .overlay(
+                    Capsule()
+                        .stroke(DesignColor.ink.opacity(0.2), lineWidth: 1)
+                )
+
+            Circle()
+                .fill(DesignColor.amberGlow.opacity(isActive ? 0.85 : 0.35))
+                .frame(width: 12, height: 12)
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(isActive ? 0.7 : 0.2), lineWidth: 1)
+                )
+                .offset(x: 18)
+        }
+        .frame(width: knobSize, height: 16)
+        .shadow(color: DesignColor.amberGlow.opacity(isActive ? 0.7 : 0), radius: 10, x: 0, y: 0)
+    }
+
+    private func gearKnob(rotation: Double) -> some View {
+        ZStack {
+            Circle()
+                .fill(DesignColor.amberGlow.opacity(0.45))
+                .blur(radius: 18)
+                .frame(width: knobSize * 0.95, height: knobSize * 0.95)
+
+            ZStack {
+                ForEach(0..<12, id: \.self) { index in
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [DesignColor.agedParchment.opacity(0.9), DesignColor.ink.opacity(0.4)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: knobSize * 0.16, height: knobSize * 0.42)
+                        .offset(y: -knobSize * 0.48)
+                        .rotationEffect(.degrees(Double(index) / 12.0 * 360.0))
+                }
+
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                DesignColor.agedParchment.opacity(0.95),
+                                DesignColor.deepWalnut.opacity(0.95)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(DesignColor.ink.opacity(0.45), lineWidth: 2)
+                    )
+                    .shadow(color: Color.black.opacity(0.45), radius: 12, x: 0, y: 6)
+
+                Circle()
+                    .strokeBorder(DesignColor.amberGlow.opacity(0.6), lineWidth: 2)
+                    .blur(radius: 1)
+                    .padding(4)
+
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [DesignColor.amberGlow.opacity(0.9), Color.clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: knobSize * 0.35
+                        )
+                    )
+                    .padding(knobSize * 0.28)
+                    .blendMode(.screen)
+
+                Circle()
+                    .stroke(Color.white.opacity(0.35), lineWidth: 1)
+                    .padding(knobSize * 0.18)
+            }
+            .rotationEffect(.degrees(rotation))
+        }
+        .shadow(color: DesignColor.amberGlow.opacity(0.5), radius: 20, x: 0, y: 10)
+    }
+
+    @ViewBuilder
+    private func stopLabel(for text: String, isActive: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(text)
+                .font(DesignTypography.Title.font)
+                .foregroundColor(DesignColor.agedParchment.opacity(isActive ? 1 : 0.65))
+            Text("Haptic tick")
+                .font(DesignTypography.Caption.font)
+                .foregroundColor(DesignColor.agedParchment.opacity(isActive ? 0.85 : 0.45))
+        }
+        .padding(.vertical, DesignSpacing.sm)
+        .padding(.horizontal, DesignSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: DesignCornerRadius.soft, style: .continuous)
+                .fill(DesignColor.amberGlow.opacity(isActive ? 0.25 : 0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignCornerRadius.soft, style: .continuous)
+                        .stroke(DesignColor.amberGlow.opacity(isActive ? 0.6 : 0.15), lineWidth: 1)
+                )
+        )
+        .shadow(color: DesignColor.amberGlow.opacity(isActive ? 0.55 : 0), radius: 12, x: 0, y: 4)
+    }
+}
+
 /// Placeholder particle system for future magical sparkles.
 struct StarParticles: View {
     private let count = 12
@@ -449,6 +685,15 @@ struct GearSlider_Previews: PreviewProvider {
         .padding()
         .background(DesignColor.deepWalnut)
         .previewLayout(.sizeThatFits)
+    }
+}
+
+struct DifficultyGearSlider_Previews: PreviewProvider {
+    static var previews: some View {
+        DifficultyGearSlider()
+            .padding()
+            .background(DesignColor.deepWalnut)
+            .previewLayout(.sizeThatFits)
     }
 }
 
