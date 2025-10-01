@@ -1,0 +1,96 @@
+{
+  "database": "Public",
+  "recordTypes": [
+    {
+      "name": "Book",
+      "fields": [
+        { "name": "title", "type": "STRING", "allowsFullTextSearch": true },
+        { "name": "subtitle", "type": "STRING", "optional": true, "allowsFullTextSearch": true },
+        { "name": "author", "type": "STRING" },
+        { "name": "summary", "type": "STRING", "allowsFullTextSearch": true },
+        { "name": "level", "type": "STRING" },
+        { "name": "topic", "type": "STRING" },
+        { "name": "length", "type": "STRING" },
+        { "name": "pageCount", "type": "INT64" }
+      ],
+      "indexes": [
+        {
+          "name": "by_level",
+          "fields": [ { "fieldName": "level", "ascending": true } ]
+        }
+      ]
+    },
+    {
+      "name": "Page",
+      "fields": [
+        { "name": "book", "type": "REFERENCE", "referenceType": "Book" },
+        { "name": "index", "type": "INT64" },
+        { "name": "estimatedWordCount", "type": "INT64", "optional": true }
+      ],
+      "indexes": [
+        {
+          "name": "by_book",
+          "fields": [ { "fieldName": "book", "ascending": true } ]
+        },
+        {
+          "name": "by_book_index",
+          "fields": [
+            { "fieldName": "book", "ascending": true },
+            { "fieldName": "index", "ascending": true }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "TextVariant",
+      "fields": [
+        { "name": "page", "type": "REFERENCE", "referenceType": "Page" },
+        { "name": "kind", "type": "STRING" },
+        { "name": "languageCode", "type": "STRING" },
+        { "name": "content", "type": "STRING", "allowsFullTextSearch": true },
+        { "name": "displayOrder", "type": "INT64" }
+      ],
+      "indexes": [
+        {
+          "name": "by_page",
+          "fields": [ { "fieldName": "page", "ascending": true } ]
+        },
+        {
+          "name": "by_page_language",
+          "fields": [
+            { "fieldName": "page", "ascending": true },
+            { "fieldName": "languageCode", "ascending": true }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DictionaryEntry",
+      "fields": [
+        { "name": "book", "type": "REFERENCE", "referenceType": "Book" },
+        { "name": "lemma", "type": "STRING" },
+        { "name": "term", "type": "STRING" },
+        { "name": "definition", "type": "STRING", "allowsFullTextSearch": true },
+        { "name": "partOfSpeech", "type": "STRING" },
+        { "name": "example", "type": "STRING", "optional": true, "allowsFullTextSearch": true },
+        { "name": "level", "type": "STRING" },
+        { "name": "pageIndex", "type": "INT64", "optional": true }
+      ],
+      "indexes": [
+        {
+          "name": "by_book",
+          "fields": [ { "fieldName": "book", "ascending": true } ]
+        },
+        {
+          "name": "by_lemma",
+          "fields": [ { "fieldName": "lemma", "ascending": true } ],
+          "isUnique": false
+        },
+        {
+          "name": "by_level",
+          "fields": [ { "fieldName": "level", "ascending": true } ]
+        }
+      ]
+    }
+  ]
+}
