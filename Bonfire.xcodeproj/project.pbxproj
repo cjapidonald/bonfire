@@ -111,8 +111,8 @@ E4F1A2B83F524B6F8D5E2D6A /* ReaderHomeView.swift */ = {isa = PBXFileReference; l
 E4F1A2BA3F524B6F8D5E2D6A /* ReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
 E4F1A2BC3F524B6F8D5E2D6A /* ContentModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/ContentModels.swift; sourceTree = "<group>"; };
 D594A8F68EB9418B84BD3573 /* ReaderState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/ReaderState.swift; sourceTree = "<group>"; };
-E4F1A2BE3F524B6F8D5E2D6A /* ContentProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Content/ContentProvider.swift; sourceTree = "<group>"; };
-E4F1A2C03F524B6F8D5E2D6A /* the_little_river_lantern.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Content/the_little_river_lantern.json; sourceTree = "<group>"; };
+E4F1A2BE3F524B6F8D5E2D6A /* ContentProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentProvider.swift; sourceTree = "<group>"; };
+E4F1A2C03F524B6F8D5E2D6A /* the_little_river_lantern.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = the_little_river_lantern.json; sourceTree = "<group>"; };
 41B80E3FABD34B76BF14B28C /* ReaderProgressStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage/ReaderProgressStore.swift; sourceTree = "<group>"; };
 C1D4E0A01D5B4C3A9F123450 /* PerformanceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/PerformanceSettings.swift; sourceTree = "<group>"; };
 C1D4E0A21D5B4C3A9F123450 /* FPSMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/FPSMonitor.swift; sourceTree = "<group>"; };
@@ -636,7 +636,9 @@ ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 CODE_SIGN_ENTITLEMENTS = Bonfire/Bonfire.entitlements;
 CODE_SIGN_STYLE = Automatic;
 CURRENT_PROJECT_VERSION = 1;
-DEVELOPMENT_ASSET_PATHS = "Bonfire/Preview Content";
+DEVELOPMENT_ASSET_PATHS = (
+    "Bonfire/Preview Content",
+);
 DEVELOPMENT_TEAM = 59Q6X62P3A;
 ENABLE_PREVIEWS = YES;
 GENERATE_INFOPLIST_FILE = NO;
@@ -664,7 +666,9 @@ ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 CODE_SIGN_ENTITLEMENTS = Bonfire/Bonfire.entitlements;
 CODE_SIGN_STYLE = Automatic;
 CURRENT_PROJECT_VERSION = 1;
-DEVELOPMENT_ASSET_PATHS = "Bonfire/Preview Content";
+DEVELOPMENT_ASSET_PATHS = (
+    "Bonfire/Preview Content",
+);
 DEVELOPMENT_TEAM = 59Q6X62P3A;
 ENABLE_PREVIEWS = YES;
 GENERATE_INFOPLIST_FILE = NO;
