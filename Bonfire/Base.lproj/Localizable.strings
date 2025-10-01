@@ -1,0 +1,5 @@
+/*
+ Localized strings are provided by language-specific .strings files.
+ This base file exists to satisfy the build configuration and will
+ defer to localized resources such as en.lproj/Localizable.strings.
+ */
