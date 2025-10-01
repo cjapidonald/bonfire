@@ -194,6 +194,7 @@ struct BookProgress: Codable, Identifiable, Hashable {
     var isCompleted: Bool
     var wordProgress: [WordProgress]
     var lastReadAt: Date?
+    var visitedPageIndices: Set<Int>
 
     init(
         id: UUID = UUID(),
@@ -201,7 +202,8 @@ struct BookProgress: Codable, Identifiable, Hashable {
         currentPageIndex: Int = 0,
         isCompleted: Bool = false,
         wordProgress: [WordProgress] = [],
-        lastReadAt: Date? = nil
+        lastReadAt: Date? = nil,
+        visitedPageIndices: Set<Int> = []
     ) {
         self.id = id
         self.bookID = bookID
@@ -209,5 +211,21 @@ struct BookProgress: Codable, Identifiable, Hashable {
         self.isCompleted = isCompleted
         self.wordProgress = wordProgress
         self.lastReadAt = lastReadAt
+        self.visitedPageIndices = visitedPageIndices
+    }
+}
+
+extension Page {
+    func text(for level: Level) -> String {
+        // Future stories may ship multiple difficulty variants; for now we default to the primary text.
+        primaryText
+    }
+
+    func wordCount(for level: Level) -> Int {
+        let components = text(for: level)
+            .lowercased()
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+        return components.count
     }
 }
