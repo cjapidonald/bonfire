@@ -47,8 +47,16 @@
 "settings.title" = "Settings";
 "settings.section.language" = "Language";
 "settings.language" = "App Language";
+"settings.section.account" = "Parent Account";
+"settings.account.parentName" = "Display Name";
 "language.english" = "English";
 "language.vietnamese" = "Vietnamese";
+"onboarding.navigationTitle" = "Welcome";
+"onboarding.title" = "Welcome to Bonfire";
+"onboarding.subtitle" = "Parents, sign in with your Apple ID to unlock the reading tools.";
+"onboarding.disclaimer" = "We only store your display name and language choice on this device.";
+"onboarding.error.generic" = "We couldn't sign you in. Please try again.";
+"onboarding.defaultDisplayName" = "Parent";
 "achievement.firstEcho.title" = "First Echo";
 "achievement.firstEcho.detail" = "Make your very first recording session.";
 "achievement.steadyTrain.title" = "Steady Train";

@@ -40,14 +40,6 @@ private enum RootTab: String, CaseIterable, Identifiable {
     @ViewBuilder
     var destination: some View {
         switch self {
-codex/implement-home-library-books-grid
-        case .reader:
-            ReaderHomeView()
-        case .profile:
-            ProfileView()
-        case .audio, .vocab:
-            PlaceholderView(titleKey: titleKey)
-
         case .books:
             BooksTabView()
         case .vocab:
@@ -56,7 +48,6 @@ codex/implement-home-library-books-grid
             AchievementsTabView()
         case .profile:
             ProfileView()
-main
         }
     }
 
@@ -78,5 +69,6 @@ struct RootTabView_Previews: PreviewProvider {
     static var previews: some View {
         RootTabView()
             .environmentObject(LanguageManager())
+            .environmentObject(UserProfileStore.preview)
     }
 }

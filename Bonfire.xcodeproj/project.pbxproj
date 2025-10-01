@@ -14,6 +14,8 @@ B27D7E45CCFE4FD48906C366 /* BooksTabView.swift in Sources */ = {isa = PBXBuildFi
 FF22270CAE91400786DDAEB9 /* VocabularyTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93C4A74B40B94D05AA9C0AB0 /* VocabularyTabView.swift */; };
 526D6BFF406C45B48224B229 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35901E6E3C68474B94101A89 /* ProfileView.swift */; };
 AD53FB825DA74C0CBFC3AD59 /* TabPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9260B6D316C14DFCAC5CBFFD /* TabPlaceholderView.swift */; };
+2D8E5F1A3C4B5D6E7F8A9B0C /* OnboardingSignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C7F4A8B2A5D4E0BB1234567 /* OnboardingSignInView.swift */; };
+4F6A7B8C9D0E1F2A3B4C5D6E /* UserProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E1D2C4B5A6978879ABCDEF0 /* UserProfileStore.swift */; };
 24B1E4192B1ED1E200D9D1A8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 24B1E4242B1ED1E200D9D1A8 /* LaunchScreen.storyboard */; };
 24B1E41A2B1ED1E200D9D1A8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 24B1E4232B1ED1E200D9D1A8 /* Assets.xcassets */; };
 24B1E41B2B1ED1E200D9D1A8 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 24B1E4282B1ED1E200D9D1A8 /* Localizable.strings */; };
@@ -54,6 +56,8 @@ B27D7E45CCFE4FD48906C366 /* BooksTabView.swift */ = {isa = PBXFileReference; las
 24B1E4222B1ED1E200D9D1A8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 24B1E4232B1ED1E200D9D1A8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 24B1E4242B1ED1E200D9D1A8 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+1C7F4A8B2A5D4E0BB1234567 /* OnboardingSignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSignInView.swift; sourceTree = "<group>"; };
+3E1D2C4B5A6978879ABCDEF0 /* UserProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileStore.swift; sourceTree = "<group>"; };
 24B1E4252B1ED1E200D9D1A8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = Base.lproj/Localizable.strings; sourceTree = "<group>"; };
 24B1E4262B1ED1E200D9D1A8 /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
 24B1E4272B1ED1E200D9D1A8 /* Bonfire.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Bonfire.entitlements; sourceTree = "<group>"; };
@@ -144,6 +148,7 @@ sourceTree = SOURCE_ROOT;
     isa = PBXGroup;
     children = (
         24B1E4202B1ED1E200D9D1A8 /* BonfireApp.swift */,
+        1C7F4A8B2A5D4E0BB1234567 /* OnboardingSignInView.swift */,
         24B1E4212B1ED1E200D9D1A8 /* RootTabView.swift */,
         B27D7E45CCFE4FD48906C366 /* BooksTabView.swift */,
         93C4A74B40B94D05AA9C0AB0 /* VocabularyTabView.swift */,
@@ -251,6 +256,7 @@ sourceTree = "<group>";
         41B80E3FABD34B76BF14B28C /* ReaderProgressStore.swift */,
         7824C8A609A54ABF8F32298F /* ReaderRecordingStore.swift */,
         9CF18ABF9DF94A16B0C71C18 /* VocabularyStore.swift */,
+        3E1D2C4B5A6978879ABCDEF0 /* UserProfileStore.swift */,
     );
     path = Storage;
     sourceTree = "<group>";
@@ -386,6 +392,7 @@ isa = PBXSourcesBuildPhase;
 buildActionMask = 2147483647;
     files = (
         24B1E4172B1ED1E200D9D1A8 /* BonfireApp.swift in Sources */,
+        2D8E5F1A3C4B5D6E7F8A9B0C /* OnboardingSignInView.swift in Sources */,
         24B1E4182B1ED1E200D9D1A8 /* RootTabView.swift in Sources */,
         22008F0D6AAE428D8AB6FAF6 /* AchievementsTabView.swift in Sources */,
         B27D7E45CCFE4FD48906C366 /* BooksTabView.swift in Sources */,
@@ -414,6 +421,7 @@ buildActionMask = 2147483647;
         4CFA6382C3AA488EBAEF782D /* ReaderProgressStore.swift in Sources */,
         AB13F528B34449AC8CA83C9F /* ReaderRecordingStore.swift in Sources */,
         195983EEC1AA45BAA195F2A9 /* VocabularyStore.swift in Sources */,
+        4F6A7B8C9D0E1F2A3B4C5D6E /* UserProfileStore.swift in Sources */,
     );
     runOnlyForDeploymentPostprocessing = 0;
 };
