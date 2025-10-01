@@ -1,0 +1,4 @@
+/* Mô tả quyền cho các thông báo hệ thống */
+"NSMicrophoneUsageDescription" = "Ứng dụng cần quyền truy cập micro để ghi lại bài luyện phát âm.";
+"NSCameraUsageDescription" = "Lưu ý: Ứng dụng có thể cần dùng camera cho các tính năng trong tương lai.";
+"NSSpeechRecognitionUsageDescription" = "Lưu ý: Ứng dụng có thể cần nhận dạng giọng nói cho các tính năng trong tương lai.";

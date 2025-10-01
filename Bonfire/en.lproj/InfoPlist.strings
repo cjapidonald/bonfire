@@ -1,0 +1,4 @@
+/* Localized usage descriptions for system permission prompts */
+"NSMicrophoneUsageDescription" = "This app requires access to the microphone to capture pronunciation practice.";
+"NSCameraUsageDescription" = "Placeholder: Camera access may be required for future features.";
+"NSSpeechRecognitionUsageDescription" = "Placeholder: Speech recognition may be required for future features.";
