@@ -23,6 +23,12 @@ struct ProfileView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+
+                Section(header: Text("Developer")) {
+                    NavigationLink("Developer Mode") {
+                        DeveloperModeView()
+                    }
+                }
             }
             .navigationTitle(LocalizedStringKey("settings.title"))
         }

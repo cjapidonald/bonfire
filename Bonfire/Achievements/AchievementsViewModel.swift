@@ -6,9 +6,11 @@ final class AchievementsViewModel: ObservableObject {
     @Published private(set) var progress: [AchievementProgress]
 
     private var cancellables: Set<AnyCancellable> = []
+    private var unlockedAchievementIDs: Set<String>
 
     init(progress: [AchievementProgress]) {
         self.progress = progress
+        self.unlockedAchievementIDs = Set(progress.filter { $0.isUnlocked }.map(\.id))
     }
 
     convenience init(
@@ -57,9 +59,35 @@ final class AchievementsViewModel: ObservableObject {
         }
         .receive(on: DispatchQueue.main)
         .sink { [weak self] progress in
-            self?.progress = progress
+            guard let self else { return }
+            self.progress = progress
+            self.trackUnlockedAchievements(progress)
         }
         .store(in: &cancellables)
+    }
+
+    private func trackUnlockedAchievements(_ progress: [AchievementProgress]) {
+        let unlocked = Set(progress.filter { $0.isUnlocked }.map(\.id))
+        let newUnlocks = unlocked.subtracting(unlockedAchievementIDs)
+
+        guard !newUnlocks.isEmpty else {
+            unlockedAchievementIDs = unlocked
+            return
+        }
+
+        for progressItem in progress where newUnlocks.contains(progressItem.id) {
+            let achievement = progressItem.achievement
+            AnalyticsLogger.shared.log(
+                event: "badge_unlocked",
+                metadata: [
+                    "achievement_id": achievement.id,
+                    "metric": achievement.metric.analyticsIdentifier,
+                    "target_value": String(Int(achievement.targetValue))
+                ]
+            )
+        }
+
+        unlockedAchievementIDs = unlocked
     }
 }
 
