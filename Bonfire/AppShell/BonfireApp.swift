@@ -3,12 +3,20 @@ import SwiftUI
 @main
 struct BonfireApp: App {
     @StateObject private var languageManager = LanguageManager()
+    @StateObject private var userProfileStore = UserProfileStore()
 
     var body: some Scene {
         WindowGroup {
-            RootTabView()
-                .environmentObject(languageManager)
-                .environment(\.locale, languageManager.locale)
+            Group {
+                if userProfileStore.isSignedIn {
+                    RootTabView()
+                } else {
+                    OnboardingSignInView()
+                }
+            }
+            .environmentObject(languageManager)
+            .environmentObject(userProfileStore)
+            .environment(\.locale, languageManager.locale)
         }
     }
 }

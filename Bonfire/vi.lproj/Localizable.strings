@@ -47,8 +47,16 @@
 "settings.title" = "Cài đặt";
 "settings.section.language" = "Ngôn ngữ";
 "settings.language" = "Ngôn ngữ ứng dụng";
+"settings.section.account" = "Tài khoản phụ huynh";
+"settings.account.parentName" = "Tên hiển thị";
 "language.english" = "Tiếng Anh";
 "language.vietnamese" = "Tiếng Việt";
+"onboarding.navigationTitle" = "Chào mừng";
+"onboarding.title" = "Chào mừng đến với Bonfire";
+"onboarding.subtitle" = "Phụ huynh hãy đăng nhập bằng Apple ID để mở khóa công cụ đọc.";
+"onboarding.disclaimer" = "Chúng tôi chỉ lưu tên hiển thị và ngôn ngữ của bạn trên thiết bị này.";
+"onboarding.error.generic" = "Không thể đăng nhập. Vui lòng thử lại.";
+"onboarding.defaultDisplayName" = "Phụ huynh";
 "achievement.firstEcho.title" = "Tiếng Vang Đầu Tiên";
 "achievement.firstEcho.detail" = "Thực hiện buổi ghi âm đầu tiên của bạn.";
 "achievement.steadyTrain.title" = "Chuyến Tàu Đều Đặn";
