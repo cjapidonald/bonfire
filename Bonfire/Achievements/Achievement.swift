@@ -108,3 +108,24 @@ struct AchievementProgress: Identifiable {
         return String(localized: resource, arguments: currentDisplay, targetDisplay)
     }
 }
+
+extension Achievement.Metric {
+    var analyticsIdentifier: String {
+        switch self {
+        case .recordingSessions:
+            return "recording_sessions"
+        case .totalRecordingMinutes:
+            return "total_recording_minutes"
+        case .vocabularyEntries:
+            return "vocabulary_entries"
+        case .completedBooks:
+            return "completed_books"
+        case .startedBooks:
+            return "started_books"
+        case .totalStars:
+            return "total_stars"
+        case .longestRecordingMinutes:
+            return "longest_recording_minutes"
+        }
+    }
+}

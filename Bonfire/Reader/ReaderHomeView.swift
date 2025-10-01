@@ -841,7 +841,8 @@ private struct ReaderShellView: View {
             "level": readerState.level.rawValue,
             "words_counted": String(totalWordsCounted),
             "duration_seconds": String(format: "%.2f", session.duration),
-            "wpm": String(format: "%.1f", result.wordsPerMinute)
+            "wpm": String(format: "%.1f", result.wordsPerMinute),
+            "session_id": session.id.uuidString
         ]
 
         switch result.status {
@@ -866,13 +867,13 @@ private struct ReaderShellView: View {
                 lastWordInteractionDescription = "⭐️ \(message)"
             }
 
-            metadata["status"] = "accepted"
             metadata["stars_awarded"] = String(reward.starsAwarded)
             metadata["quality_factor"] = String(format: "%.2f", result.qualityFactor)
             metadata["new_pages"] = String(reward.newlyVisitedPageIndices.count)
             metadata["pages_visited_total"] = String(reward.updatedProgress.visitedPageIndices.count)
+            metadata["status"] = "accepted"
 
-            AnalyticsLogger.shared.log(event: "reading_session_submit", metadata: metadata)
+            AnalyticsLogger.shared.log(event: "session_submitted", metadata: metadata)
 
             resetSessionTracking()
         case .rejected(let reason):
@@ -881,11 +882,22 @@ private struct ReaderShellView: View {
             lastWordInteractionDescription = message
 
             metadata["status"] = "rejected"
-            for (key, value) in failureMetadata(for: reason) {
+            let failureDetails = failureMetadata(for: reason)
+            for (key, value) in failureDetails {
                 metadata[key] = value
             }
 
-            AnalyticsLogger.shared.log(event: "reading_session_submit", metadata: metadata)
+            AnalyticsLogger.shared.log(event: "session_submitted", metadata: metadata)
+
+            var invalidMetadata = failureDetails
+            invalidMetadata["book_id"] = book.id.uuidString
+            invalidMetadata["session_id"] = session.id.uuidString
+            invalidMetadata["level"] = readerState.level.rawValue
+            invalidMetadata["words_counted"] = String(totalWordsCounted)
+            invalidMetadata["duration_seconds"] = String(format: "%.2f", session.duration)
+            invalidMetadata["wpm"] = String(format: "%.1f", result.wordsPerMinute)
+
+            AnalyticsLogger.shared.log(event: "session_invalid_reason", metadata: invalidMetadata)
         }
     }
 
@@ -932,6 +944,17 @@ private struct ReaderShellView: View {
     }
 
     private func handleSingleTap(on page: Page, selection: WordDetectingTextView.WordSelection) {
+        AnalyticsLogger.shared.log(
+            event: "word_tapped",
+            metadata: [
+                "book_id": book.id.uuidString,
+                "page_index": String(page.index),
+                "term": selection.normalized,
+                "surface": selection.original,
+                "source": "single"
+            ]
+        )
+
         let translation = translationProvider.translation(for: selection, in: book)
         let sample = sampleSentence(for: selection, on: page)
         let presentation = WordPopoverPresentation(
@@ -949,6 +972,17 @@ private struct ReaderShellView: View {
     }
 
     private func handleDoubleTap(on page: Page, selection: WordDetectingTextView.WordSelection) {
+        AnalyticsLogger.shared.log(
+            event: "word_tapped",
+            metadata: [
+                "book_id": book.id.uuidString,
+                "page_index": String(page.index),
+                "term": selection.normalized,
+                "surface": selection.original,
+                "source": "double"
+            ]
+        )
+
         let translation = translationProvider.translation(for: selection, in: book)
         let sample = sampleSentence(for: selection, on: page)
         let presentation = WordPopoverPresentation(
@@ -981,6 +1015,18 @@ private struct ReaderShellView: View {
 
         lastWordInteractionDescription = "✨ Counted “\(selection.original)” • Words: \(totalWordsCounted) • Unique this page: \(uniqueSet.count)"
 
+        AnalyticsLogger.shared.log(
+            event: "lg_word_counted",
+            metadata: [
+                "book_id": book.id.uuidString,
+                "page_index": String(pageIndex),
+                "term": selection.normalized,
+                "surface": selection.original,
+                "total_words": String(totalWordsCounted),
+                "unique_words_on_page": String(uniqueSet.count)
+            ]
+        )
+
         return true
     }
 
@@ -1004,12 +1050,13 @@ private struct ReaderShellView: View {
         }
 
         AnalyticsLogger.shared.log(
-            event: "vocab_added",
+            event: "word_added_vocab",
             metadata: [
                 "term": entry.normalized,
                 "book_id": book.id.uuidString,
                 "page_index": String(presentation.pageIndex),
-                "source": source
+                "source": source,
+                "surface": entry.original
             ]
         )
     }

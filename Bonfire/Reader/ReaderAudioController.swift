@@ -61,6 +61,7 @@ final class ReaderAudioController: NSObject, ObservableObject {
     private var meterTimer: Timer?
     private var playbackTimer: Timer?
     private var recordingURL: URL?
+    private var activeRecordingStartDate: Date?
     private var cancellable: AnyCancellable?
 
     init(book: Book, audioSession: AVAudioSession = .sharedInstance(), recordingStore: ReaderRecordingStore = .shared) {
@@ -112,6 +113,13 @@ final class ReaderAudioController: NSObject, ObservableObject {
             elapsedTime = 0
             meterLevel = 0
             startMeterTimer()
+            activeRecordingStartDate = Date()
+            AnalyticsLogger.shared.log(
+                event: "record_start",
+                metadata: [
+                    "book_id": bookID.uuidString
+                ]
+            )
         } catch {
             print("Failed to start recording: \(error)")
             cleanupTemporaryRecording()
@@ -175,16 +183,32 @@ final class ReaderAudioController: NSObject, ObservableObject {
         elapsedTime = 0
         try? audioSession.setActive(false, options: .notifyOthersOnDeactivation)
 
+        var metadata: [String: String] = [
+            "book_id": bookID.uuidString,
+            "duration_seconds": String(format: "%.2f", recordedDuration)
+        ]
+
+        if let startDate = activeRecordingStartDate {
+            let elapsed = Date().timeIntervalSince(startDate)
+            metadata["elapsed_seconds"] = String(format: "%.2f", elapsed)
+        }
+
         if let url = recordingURL {
             if let session = recordingStore.saveRecording(for: bookID, from: url, duration: recordedDuration) {
                 latestSession = session
                 self.duration = session.duration
+                metadata["session_saved"] = "true"
+                metadata["session_id"] = session.id.uuidString
             } else {
                 cleanupTemporaryRecording()
+                metadata["session_saved"] = "false"
             }
         }
 
         recordingURL = nil
+        activeRecordingStartDate = nil
+
+        AnalyticsLogger.shared.log(event: "record_stop", metadata: metadata)
     }
 
     func stopPlayback() {
