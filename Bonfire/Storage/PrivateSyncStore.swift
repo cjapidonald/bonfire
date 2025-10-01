@@ -1,10 +1,13 @@
 import Foundation
+#if canImport(SwiftData)
 import SwiftData
+#endif
 
 protocol SyncOutboxProcessor: Sendable {
     func process(_ envelope: SyncOperationEnvelope) async throws
 }
 
+#if canImport(SwiftData)
 actor PrivateSyncCoordinator {
     static let shared = PrivateSyncCoordinator()
 
@@ -453,3 +456,134 @@ actor PrivateSyncCoordinator {
         }
     }
 }
+#else
+actor PrivateSyncCoordinator {
+    static let shared = PrivateSyncCoordinator()
+
+    private var isOnline = false
+    private var outboxProcessor: SyncOutboxProcessor?
+    private var pendingEnvelopes: [SyncOperationEnvelope] = []
+    private let encoder = JSONEncoder()
+
+    func register(processor: SyncOutboxProcessor?) {
+        outboxProcessor = processor
+        Task { await flushPendingIfNeeded() }
+    }
+
+    func updateConnectivity(isOnline: Bool) {
+        guard self.isOnline != isOnline else { return }
+        self.isOnline = isOnline
+        if isOnline {
+            Task { await flushPendingIfNeeded() }
+        }
+    }
+
+    func persistReadingSession(
+        _ session: ReadingSessionSnapshot,
+        bookProgress: BookProgressSnapshot
+    ) async {
+        await queueEnvelope {
+            try SyncOperationEnvelope(
+                recordType: .bookProgress,
+                recordName: bookProgress.recordName,
+                action: .upsert,
+                payload: bookProgress,
+                timestamp: bookProgress.modifiedAt,
+                encoder: encoder
+            )
+        }
+
+        await queueEnvelope {
+            try SyncOperationEnvelope(
+                recordType: .readingSession,
+                recordName: session.recordName,
+                action: .upsert,
+                payload: session,
+                timestamp: session.modifiedAt,
+                encoder: encoder
+            )
+        }
+    }
+
+    func mergeRemote(bookProgress _: BookProgressSnapshot) async {}
+
+    func mergeRemote(wordProgress _: WordProgressSnapshot) async {}
+
+    func upsertWordProgress(_ snapshot: WordProgressSnapshot) async {
+        await queueEnvelope {
+            try SyncOperationEnvelope(
+                recordType: .wordProgress,
+                recordName: snapshot.recordName,
+                action: .upsert,
+                payload: snapshot,
+                timestamp: snapshot.modifiedAt,
+                encoder: encoder
+            )
+        }
+    }
+
+    func upsertUserProfile(_ snapshot: UserProfileSnapshot) async {
+        await queueEnvelope {
+            try SyncOperationEnvelope(
+                recordType: .userProfile,
+                recordName: snapshot.recordName,
+                action: .upsert,
+                payload: snapshot,
+                timestamp: snapshot.modifiedAt,
+                encoder: encoder
+            )
+        }
+    }
+
+    func mergeRemote(userProfile _: UserProfileSnapshot) async {}
+
+    func recordAchievement(_ snapshot: AchievementSnapshot) async {
+        await queueEnvelope {
+            try SyncOperationEnvelope(
+                recordType: .achievement,
+                recordName: snapshot.recordName,
+                action: .upsert,
+                payload: snapshot,
+                timestamp: snapshot.modifiedAt,
+                encoder: encoder
+            )
+        }
+    }
+
+    func mergeRemote(achievement _: AchievementSnapshot) async {}
+
+    private func queueEnvelope(_ builder: () throws -> SyncOperationEnvelope) async {
+        do {
+            let envelope = try builder()
+            if isOnline, let processor = outboxProcessor {
+                do {
+                    try await processor.process(envelope)
+                } catch {
+                    pendingEnvelopes.append(envelope)
+                    print("PrivateSyncCoordinator process error: \(error)")
+                }
+            } else {
+                pendingEnvelopes.append(envelope)
+            }
+        } catch {
+            print("PrivateSyncCoordinator encode error: \(error)")
+        }
+    }
+
+    private func flushPendingIfNeeded() async {
+        guard isOnline, let processor = outboxProcessor else { return }
+        var remaining: [SyncOperationEnvelope] = []
+
+        for envelope in pendingEnvelopes {
+            do {
+                try await processor.process(envelope)
+            } catch {
+                remaining.append(envelope)
+                print("PrivateSyncCoordinator flush error: \(error)")
+            }
+        }
+
+        pendingEnvelopes = remaining
+    }
+}
+#endif
