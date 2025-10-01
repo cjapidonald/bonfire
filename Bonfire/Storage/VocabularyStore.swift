@@ -106,3 +106,61 @@ final class VocabularyStore: ObservableObject {
         }
     }
 }
+
+#if DEBUG
+extension VocabularyStore {
+    func debugReset() {
+        entries = []
+        userDefaults.removeObject(forKey: storageKey)
+    }
+
+    func debugSeedEntries() {
+        debugReset()
+        debugEnsureMinimumEntries(count: 12)
+    }
+
+    func debugEnsureMinimumEntries(count: Int) {
+        guard entries.count < count else { return }
+
+        let sampleWords: [(String, String, String)] = [
+            ("ánh sáng", "light", "A gentle glow filled the room."),
+            ("dòng sông", "river", "The river winds through the valley."),
+            ("ngọn đèn", "lantern", "She raised her lantern to see."),
+            ("bầu trời", "sky", "The sky shimmered with stars."),
+            ("thành phố", "city", "The city hummed quietly."),
+            ("niềm tin", "belief", "Their belief never wavered."),
+            ("bình minh", "sunrise", "Sunrise painted the hills in gold."),
+            ("mạo hiểm", "adventure", "The adventure was just beginning."),
+            ("người bạn", "friend", "A friend stood beside them."),
+            ("hi vọng", "hope", "Hope sparked in their hearts."),
+            ("bí mật", "secret", "A secret whispered in the breeze."),
+            ("bước chân", "footstep", "Footsteps echoed softly."),
+            ("cánh rừng", "forest", "The forest canopy glistened."),
+            ("ánh trăng", "moonlight", "Moonlight guided their path."),
+            ("lửa trại", "campfire", "The campfire crackled warmly."),
+        ]
+
+        var iterator = sampleWords.makeIterator()
+        let bookID = ContentProvider.shared.books.first?.id ?? UUID()
+
+        while entries.count < count {
+            let sample = iterator.next() ?? ("tình bạn", "friendship", "Friendship carried them onward.")
+            let translation = WordTranslation(
+                headword: sample.1,
+                normalized: sample.1.replacingOccurrences(of: " ", with: "").lowercased(),
+                vietnamese: sample.0,
+                partOfSpeech: .noun,
+                englishDefinition: sample.1.capitalized
+            )
+
+            _ = addWord(
+                original: sample.0,
+                translation: translation,
+                sampleSentence: sample.2,
+                bookID: bookID,
+                pageIndex: Int.random(in: 1...12)
+            )
+        }
+    }
+}
+#endif

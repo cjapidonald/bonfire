@@ -139,8 +139,65 @@ final class ReaderRecordingStore: ObservableObject {
         persist()
     }
 
-    private func deleteFile(for session: ReaderRecordingSession) {
+    fileprivate func deleteFile(for session: ReaderRecordingSession) {
         let url = fileURL(for: session)
         try? fileManager.removeItem(at: url)
     }
 }
+
+#if DEBUG
+extension ReaderRecordingStore {
+    func debugReset() {
+        for sessions in sessionsByBook.values {
+            for session in sessions {
+                deleteFile(for: session)
+            }
+        }
+
+        sessionsByBook = [:]
+        userDefaults.removeObject(forKey: metadataKey)
+    }
+
+    func debugSeedSessions() {
+        let bookIDs: [UUID]
+        let books = ContentProvider.shared.books
+        if books.isEmpty {
+            bookIDs = (0..<3).map { _ in UUID() }
+        } else {
+            bookIDs = books.prefix(3).map(\.id)
+        }
+
+        var seeded: [UUID: [ReaderRecordingSession]] = [:]
+        let now = Date()
+
+        for (index, bookID) in bookIDs.enumerated() {
+            var sessions: [ReaderRecordingSession] = []
+            for offset in 0..<4 {
+                let createdAt = now.addingTimeInterval(TimeInterval(-(index * 4 + offset) * 900))
+                let duration = TimeInterval(6 * 60 + Int.random(in: 0...180))
+                let fileName = "debug-\(UUID().uuidString).m4a"
+                let session = ReaderRecordingSession(
+                    id: UUID(),
+                    bookID: bookID,
+                    createdAt: createdAt,
+                    duration: duration,
+                    fileName: fileName
+                )
+                sessions.append(session)
+                debugEnsureFileExists(named: fileName)
+            }
+            seeded[bookID] = sessions
+        }
+
+        sessionsByBook = seeded
+        persist()
+    }
+
+    private func debugEnsureFileExists(named fileName: String) {
+        let url = directoryURL.appendingPathComponent(fileName)
+        if !fileManager.fileExists(atPath: url.path) {
+            fileManager.createFile(atPath: url.path, contents: Data())
+        }
+    }
+}
+#endif
