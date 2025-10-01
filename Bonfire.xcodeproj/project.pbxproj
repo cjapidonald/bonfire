@@ -42,6 +42,7 @@ C45972F654074A77A45AF701 /* AchievementsViewModel.swift in Sources */ = {isa = P
 2C4DC2F177CD4951B7280C22 /* AchievementPatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55CC2E13C7EC4966B23E70E1 /* AchievementPatchView.swift */; };
 AB13F528B34449AC8CA83C9F /* ReaderRecordingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7824C8A609A54ABF8F32298F /* ReaderRecordingStore.swift */; };
 195983EEC1AA45BAA195F2A9 /* VocabularyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CF18ABF9DF94A16B0C71C18 /* VocabularyStore.swift */; };
+E5F0C8A7A9E44929B0CF8F6D /* CloudContentRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C8F2F4A3B3F493A8E5E5F20 /* CloudContentRecord.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +68,10 @@ B27D7E45CCFE4FD48906C366 /* BooksTabView.swift */ = {isa = PBXFileReference; las
 24B1E4322B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
 24B1E4332B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
 24B1E4342B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
+6C8F2F4A3B3F493A8E5E5F20 /* CloudContentRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudContentRecord.swift; sourceTree = "<group>"; };
+7A4D21894F99444CA9B2FC61 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+4F2D8C0F8A8B4A97B9927F31 /* PublicDatabaseSchema.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Schema/PublicDatabaseSchema.json; sourceTree = "<group>"; };
+B8D44E7E5E614B80A8DAE501 /* starry_forest_story.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Seed/Development/starry_forest_story.json; sourceTree = "<group>"; };
 9C1A5436E192431FAC27C24A /* Achievement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Achievement.swift; sourceTree = "<group>"; };
 227EE671A9F74842B81A1E5C /* AchievementRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementRegistry.swift; sourceTree = "<group>"; };
 8D3FD20C0F714F8C9175C7A1 /* AchievementsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementsViewModel.swift; sourceTree = "<group>"; };
@@ -242,12 +247,40 @@ sourceTree = "<group>";
     sourceTree = "<group>";
 };
 24B1E4092B1ED1E200D9D1A8 /* Cloud */ = {
-isa = PBXGroup;
-children = (
-24B1E4352B1ED1E200D9D1A8 /* .gitkeep */,
-);
-path = Cloud;
-sourceTree = "<group>";
+    isa = PBXGroup;
+    children = (
+        6C8F2F4A3B3F493A8E5E5F20 /* CloudContentRecord.swift */,
+        7A4D21894F99444CA9B2FC61 /* README.md */,
+        5B0E11C72907444C9E0F124F /* Schema */,
+        3E0B7C16D97F41E69BB3EAA8 /* Seed */,
+        24B1E4352B1ED1E200D9D1A8 /* .gitkeep */,
+    );
+    path = Cloud;
+    sourceTree = "<group>";
+};
+3E0B7C16D97F41E69BB3EAA8 /* Seed */ = {
+    isa = PBXGroup;
+    children = (
+        9D1F0B8E3D234C07A3770F58 /* Development */,
+    );
+    path = Seed;
+    sourceTree = "<group>";
+};
+5B0E11C72907444C9E0F124F /* Schema */ = {
+    isa = PBXGroup;
+    children = (
+        4F2D8C0F8A8B4A97B9927F31 /* PublicDatabaseSchema.json */,
+    );
+    path = Schema;
+    sourceTree = "<group>";
+};
+9D1F0B8E3D234C07A3770F58 /* Development */ = {
+    isa = PBXGroup;
+    children = (
+        B8D44E7E5E614B80A8DAE501 /* starry_forest_story.json */,
+    );
+    path = Development;
+    sourceTree = "<group>";
 };
 24B1E40A2B1ED1E200D9D1A8 /* Storage */ = {
     isa = PBXGroup;
@@ -421,6 +454,7 @@ buildActionMask = 2147483647;
         4CFA6382C3AA488EBAEF782D /* ReaderProgressStore.swift in Sources */,
         AB13F528B34449AC8CA83C9F /* ReaderRecordingStore.swift in Sources */,
         195983EEC1AA45BAA195F2A9 /* VocabularyStore.swift in Sources */,
+        E5F0C8A7A9E44929B0CF8F6D /* CloudContentRecord.swift in Sources */,
         4F6A7B8C9D0E1F2A3B4C5D6E /* UserProfileStore.swift in Sources */,
     );
     runOnlyForDeploymentPostprocessing = 0;

@@ -1,0 +1,296 @@
+{
+  "records": [
+    {
+      "recordName": "DEV_Book_StarryForestAdventure",
+      "recordType": "Book",
+      "fields": {
+        "title": { "value": "Starry Forest Adventure" },
+        "subtitle": { "value": "A Curious Fox Explores the Night" },
+        "author": { "value": "Bonfire Editorial" },
+        "summary": {
+          "value": "Mina the fox wakes before dawn to explore the glowing forest and gather her sleepy friends for sunrise."
+        },
+        "level": { "value": "A1" },
+        "topic": { "value": "adventure" },
+        "length": { "value": "short" },
+        "pageCount": { "value": 3 }
+      }
+    },
+    {
+      "recordName": "DEV_Page_StarryForest_0",
+      "recordType": "Page",
+      "fields": {
+        "book": {
+          "value": {
+            "recordName": "DEV_Book_StarryForestAdventure",
+            "zone": "_defaultZone",
+            "action": "NONE"
+          }
+        },
+        "index": { "value": 0 },
+        "estimatedWordCount": { "value": 22 }
+      }
+    },
+    {
+      "recordName": "DEV_Page_StarryForest_1",
+      "recordType": "Page",
+      "fields": {
+        "book": {
+          "value": {
+            "recordName": "DEV_Book_StarryForestAdventure",
+            "zone": "_defaultZone",
+            "action": "NONE"
+          }
+        },
+        "index": { "value": 1 },
+        "estimatedWordCount": { "value": 24 }
+      }
+    },
+    {
+      "recordName": "DEV_Page_StarryForest_2",
+      "recordType": "Page",
+      "fields": {
+        "book": {
+          "value": {
+            "recordName": "DEV_Book_StarryForestAdventure",
+            "zone": "_defaultZone",
+            "action": "NONE"
+          }
+        },
+        "index": { "value": 2 },
+        "estimatedWordCount": { "value": 23 }
+      }
+    },
+    {
+      "recordName": "DEV_TextVariant_StarryForest_0_original",
+      "recordType": "TextVariant",
+      "fields": {
+        "page": {
+          "value": {
+            "recordName": "DEV_Page_StarryForest_0",
+            "zone": "_defaultZone",
+            "action": "NONE"
+          }
+        },
+        "kind": { "value": "original" },
+        "languageCode": { "value": "en" },
+        "content": {
+          "value": "Mina the fox woke before sunrise, the forest still dressed in silver mist."
+        },
+        "displayOrder": { "value": 0 }
+      }
+    },
+    {
+      "recordName": "DEV_TextVariant_StarryForest_0_translation",
+      "recordType": "TextVariant",
+      "fields": {
+        "page": {
+          "value": {
+            "recordName": "DEV_Page_StarryForest_0",
+            "zone": "_defaultZone",
+            "action": "NONE"
+          }
+        },
+        "kind": { "value": "translation" },
+        "languageCode": { "value": "vi" },
+        "content": {
+          "value": "Cáo Mina thức dậy trước bình minh, khu rừng vẫn khoác màn sương bạc."
+        },
+        "displayOrder": { "value": 1 }
+      }
+    },
+    {
+      "recordName": "DEV_TextVariant_StarryForest_0_phonetic",
+      "recordType": "TextVariant",
+      "fields": {
+        "page": {
+          "value": {
+            "recordName": "DEV_Page_StarryForest_0",
+            "zone": "_defaultZone",
+            "action": "NONE"
+          }
+        },
+        "kind": { "value": "phonetic" },
+        "languageCode": { "value": "en-fonipa" },
+        "content": {
+          "value": "MEE-nah thuh fahks wohk bih-FOHR SUN-rise, thuh FAW-ruhst stihl drest in SIHL-vur mist."
+        },
+        "displayOrder": { "value": 2 }
+      }
+    },
+    {
+      "recordName": "DEV_TextVariant_StarryForest_1_original",
+      "recordType": "TextVariant",
+      "fields": {
+        "page": {
+          "value": {
+            "recordName": "DEV_Page_StarryForest_1",
+            "zone": "_defaultZone",
+            "action": "NONE"
+          }
+        },
+        "kind": { "value": "original" },
+        "languageCode": { "value": "en" },
+        "content": {
+          "value": "She lit a small lantern and followed fireflies toward the old cedar clearing."
+        },
+        "displayOrder": { "value": 0 }
+      }
+    },
+    {
+      "recordName": "DEV_TextVariant_StarryForest_1_translation",
+      "recordType": "TextVariant",
+      "fields": {
+        "page": {
+          "value": {
+            "recordName": "DEV_Page_StarryForest_1",
+            "zone": "_defaultZone",
+            "action": "NONE"
+          }
+        },
+        "kind": { "value": "translation" },
+        "languageCode": { "value": "vi" },
+        "content": {
+          "value": "Cô thắp một chiếc đèn lồng nhỏ và đi theo đàn đom đóm đến khoảng trống cây tuyết tùng."
+        },
+        "displayOrder": { "value": 1 }
+      }
+    },
+    {
+      "recordName": "DEV_TextVariant_StarryForest_1_phonetic",
+      "recordType": "TextVariant",
+      "fields": {
+        "page": {
+          "value": {
+            "recordName": "DEV_Page_StarryForest_1",
+            "zone": "_defaultZone",
+            "action": "NONE"
+          }
+        },
+        "kind": { "value": "phonetic" },
+        "languageCode": { "value": "en-fonipa" },
+        "content": {
+          "value": "Shee liht uh small LAN-turn and FAH-lohd FYR-flayz tuh-WAWRD thee ohld SEE-der KLEER-ing."
+        },
+        "displayOrder": { "value": 2 }
+      }
+    },
+    {
+      "recordName": "DEV_TextVariant_StarryForest_2_original",
+      "recordType": "TextVariant",
+      "fields": {
+        "page": {
+          "value": {
+            "recordName": "DEV_Page_StarryForest_2",
+            "zone": "_defaultZone",
+            "action": "NONE"
+          }
+        },
+        "kind": { "value": "original" },
+        "languageCode": { "value": "en" },
+        "content": {
+          "value": "There she found her friends yawning awake as dawn painted the sky with rose and gold."
+        },
+        "displayOrder": { "value": 0 }
+      }
+    },
+    {
+      "recordName": "DEV_TextVariant_StarryForest_2_translation",
+      "recordType": "TextVariant",
+      "fields": {
+        "page": {
+          "value": {
+            "recordName": "DEV_Page_StarryForest_2",
+            "zone": "_defaultZone",
+            "action": "NONE"
+          }
+        },
+        "kind": { "value": "translation" },
+        "languageCode": { "value": "vi" },
+        "content": {
+          "value": "Tại đó cô thấy bạn bè mình ngáp dài tỉnh dậy khi bình minh tô bầu trời bằng sắc hồng và vàng."
+        },
+        "displayOrder": { "value": 1 }
+      }
+    },
+    {
+      "recordName": "DEV_TextVariant_StarryForest_2_phonetic",
+      "recordType": "TextVariant",
+      "fields": {
+        "page": {
+          "value": {
+            "recordName": "DEV_Page_StarryForest_2",
+            "zone": "_defaultZone",
+            "action": "NONE"
+          }
+        },
+        "kind": { "value": "phonetic" },
+        "languageCode": { "value": "en-fonipa" },
+        "content": {
+          "value": "THAIR shee found her frendz YAWN-ing uh-WAYK az DAWN PAYN-ted thuh SKY with ROHZ and GOHLD."
+        },
+        "displayOrder": { "value": 2 }
+      }
+    },
+    {
+      "recordName": "DEV_Dictionary_StarryForest_Lantern",
+      "recordType": "DictionaryEntry",
+      "fields": {
+        "book": {
+          "value": {
+            "recordName": "DEV_Book_StarryForestAdventure",
+            "zone": "_defaultZone",
+            "action": "NONE"
+          }
+        },
+        "lemma": { "value": "lantern" },
+        "term": { "value": "lantern" },
+        "definition": { "value": "A light that can be carried, often protected by glass." },
+        "partOfSpeech": { "value": "noun" },
+        "example": { "value": "She lit a small lantern before leaving the den." },
+        "level": { "value": "A1" },
+        "pageIndex": { "value": 1 }
+      }
+    },
+    {
+      "recordName": "DEV_Dictionary_StarryForest_Clearing",
+      "recordType": "DictionaryEntry",
+      "fields": {
+        "book": {
+          "value": {
+            "recordName": "DEV_Book_StarryForestAdventure",
+            "zone": "_defaultZone",
+            "action": "NONE"
+          }
+        },
+        "lemma": { "value": "clearing" },
+        "term": { "value": "clearing" },
+        "definition": { "value": "An open space in a forest where there are no trees." },
+        "partOfSpeech": { "value": "noun" },
+        "example": { "value": "Fireflies led her to the old cedar clearing." },
+        "level": { "value": "A2" },
+        "pageIndex": { "value": 1 }
+      }
+    },
+    {
+      "recordName": "DEV_Dictionary_StarryForest_Dawn",
+      "recordType": "DictionaryEntry",
+      "fields": {
+        "book": {
+          "value": {
+            "recordName": "DEV_Book_StarryForestAdventure",
+            "zone": "_defaultZone",
+            "action": "NONE"
+          }
+        },
+        "lemma": { "value": "dawn" },
+        "term": { "value": "dawn" },
+        "definition": { "value": "The time of day when light first appears in the morning." },
+        "partOfSpeech": { "value": "noun" },
+        "example": { "value": "They gathered as dawn painted the sky." },
+        "level": { "value": "A1" },
+        "pageIndex": { "value": 2 }
+      }
+    }
+  ]
+}

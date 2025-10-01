@@ -18,3 +18,11 @@
 - Create a `Docs/` folder with this spec exported as README section headings.
 - Constraints: No binary assets checked in except placeholder textures.
 - Acceptance Criteria: Repo initialized; README references app IDs; branching rules documented.
+
+# Prompt 24 — CloudKit Schema (PublicDB Content)
+
+- Define Public database record types `Book`, `Page`, `TextVariant`, and `DictionaryEntry` with the fields described in the spec.
+- Add indexes to support common queries: book references, CEFR level filters, page ordering, and dictionary lemma lookups.
+- Seed the development environment with the sample story for testing.
+- Constraints: No learner or child PII stored in PublicDB.
+- Acceptance Criteria: Records and indexes appear in CloudKit Dashboard; development builds can query seeded content.
