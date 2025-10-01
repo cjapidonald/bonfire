@@ -9,6 +9,11 @@ objects = {
 /* Begin PBXBuildFile section */
 24B1E4172B1ED1E200D9D1A8 /* BonfireApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24B1E4202B1ED1E200D9D1A8 /* BonfireApp.swift */; };
 24B1E4182B1ED1E200D9D1A8 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24B1E4212B1ED1E200D9D1A8 /* RootTabView.swift */; };
+22008F0D6AAE428D8AB6FAF6 /* AchievementsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF59AC4BD411447AB24DB0AB /* AchievementsTabView.swift */; };
+B27D7E45CCFE4FD48906C366 /* BooksTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B27D7E45CCFE4FD48906C366 /* BooksTabView.swift */; };
+FF22270CAE91400786DDAEB9 /* VocabularyTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93C4A74B40B94D05AA9C0AB0 /* VocabularyTabView.swift */; };
+526D6BFF406C45B48224B229 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35901E6E3C68474B94101A89 /* ProfileView.swift */; };
+AD53FB825DA74C0CBFC3AD59 /* TabPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9260B6D316C14DFCAC5CBFFD /* TabPlaceholderView.swift */; };
 24B1E4192B1ED1E200D9D1A8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 24B1E4242B1ED1E200D9D1A8 /* LaunchScreen.storyboard */; };
 24B1E41A2B1ED1E200D9D1A8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 24B1E4232B1ED1E200D9D1A8 /* Assets.xcassets */; };
 24B1E41B2B1ED1E200D9D1A8 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 24B1E4282B1ED1E200D9D1A8 /* Localizable.strings */; };
@@ -29,12 +34,23 @@ E4F1A2C13F524B6F8D5E2D6A /* the_little_river_lantern.json in Resources */ = {isa
 EF6FACF929A59A3E446B050F /* AudioRecorderSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD7222B1E55E2511CC51D059 /* AudioRecorderSetupView.swift */; };
 528F5EA050E14427C7B92332 /* AudioRecorderSetupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2BC76464C02EAD571658D10 /* AudioRecorderSetupViewModel.swift */; };
 4CFA6382C3AA488EBAEF782D /* ReaderProgressStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41B80E3FABD34B76BF14B28C /* ReaderProgressStore.swift */; };
+3BC9E2F105184C9D80BD231E /* Achievement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C1A5436E192431FAC27C24A /* Achievement.swift */; };
+FDC32E9234DD4CBD82654FE1 /* AchievementRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 227EE671A9F74842B81A1E5C /* AchievementRegistry.swift */; };
+C45972F654074A77A45AF701 /* AchievementsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D3FD20C0F714F8C9175C7A1 /* AchievementsViewModel.swift */; };
+2C4DC2F177CD4951B7280C22 /* AchievementPatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55CC2E13C7EC4966B23E70E1 /* AchievementPatchView.swift */; };
+AB13F528B34449AC8CA83C9F /* ReaderRecordingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7824C8A609A54ABF8F32298F /* ReaderRecordingStore.swift */; };
+195983EEC1AA45BAA195F2A9 /* VocabularyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CF18ABF9DF94A16B0C71C18 /* VocabularyStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 24B1E4162B1ED1E200D9D1A8 /* Bonfire.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bonfire.app; sourceTree = BUILT_PRODUCTS_DIR; };
 24B1E4202B1ED1E200D9D1A8 /* BonfireApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BonfireApp.swift; sourceTree = "<group>"; };
 24B1E4212B1ED1E200D9D1A8 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
+DF59AC4BD411447AB24DB0AB /* AchievementsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementsTabView.swift; sourceTree = "<group>"; };
+B27D7E45CCFE4FD48906C366 /* BooksTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BooksTabView.swift; sourceTree = "<group>"; };
+93C4A74B40B94D05AA9C0AB0 /* VocabularyTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabularyTabView.swift; sourceTree = "<group>"; };
+35901E6E3C68474B94101A89 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+9260B6D316C14DFCAC5CBFFD /* TabPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabPlaceholderView.swift; sourceTree = "<group>"; };
 24B1E4222B1ED1E200D9D1A8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 24B1E4232B1ED1E200D9D1A8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 24B1E4242B1ED1E200D9D1A8 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -47,8 +63,14 @@ EF6FACF929A59A3E446B050F /* AudioRecorderSetupView.swift in Sources */ = {isa = 
 24B1E4322B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
 24B1E4332B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
 24B1E4342B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
+9C1A5436E192431FAC27C24A /* Achievement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Achievement.swift; sourceTree = "<group>"; };
+227EE671A9F74842B81A1E5C /* AchievementRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementRegistry.swift; sourceTree = "<group>"; };
+8D3FD20C0F714F8C9175C7A1 /* AchievementsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementsViewModel.swift; sourceTree = "<group>"; };
+55CC2E13C7EC4966B23E70E1 /* AchievementPatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementPatchView.swift; sourceTree = "<group>"; };
 24B1E4352B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
 24B1E4362B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
+7824C8A609A54ABF8F32298F /* ReaderRecordingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderRecordingStore.swift; sourceTree = "<group>"; };
+9CF18ABF9DF94A16B0C71C18 /* VocabularyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabularyStore.swift; sourceTree = "<group>"; };
 24B1E4372B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
 24B1E4382B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
 24B1E4392B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
@@ -119,13 +141,18 @@ path = Bonfire;
 sourceTree = SOURCE_ROOT;
 };
 24B1E4032B1ED1E200D9D1A8 /* AppShell */ = {
-isa = PBXGroup;
-children = (
-24B1E4202B1ED1E200D9D1A8 /* BonfireApp.swift */,
-24B1E4212B1ED1E200D9D1A8 /* RootTabView.swift */,
-);
-path = AppShell;
-sourceTree = "<group>";
+    isa = PBXGroup;
+    children = (
+        24B1E4202B1ED1E200D9D1A8 /* BonfireApp.swift */,
+        24B1E4212B1ED1E200D9D1A8 /* RootTabView.swift */,
+        B27D7E45CCFE4FD48906C366 /* BooksTabView.swift */,
+        93C4A74B40B94D05AA9C0AB0 /* VocabularyTabView.swift */,
+        DF59AC4BD411447AB24DB0AB /* AchievementsTabView.swift */,
+        35901E6E3C68474B94101A89 /* ProfileView.swift */,
+        9260B6D316C14DFCAC5CBFFD /* TabPlaceholderView.swift */,
+    );
+    path = AppShell;
+    sourceTree = "<group>";
 };
 24B1E4042B1ED1E200D9D1A8 /* DesignSystem */ = {
 isa = PBXGroup;
@@ -198,12 +225,16 @@ path = Vocab;
 sourceTree = "<group>";
 };
 24B1E4082B1ED1E200D9D1A8 /* Achievements */ = {
-isa = PBXGroup;
-children = (
-24B1E4342B1ED1E200D9D1A8 /* .gitkeep */,
-);
-path = Achievements;
-sourceTree = "<group>";
+    isa = PBXGroup;
+    children = (
+        9C1A5436E192431FAC27C24A /* Achievement.swift */,
+        227EE671A9F74842B81A1E5C /* AchievementRegistry.swift */,
+        8D3FD20C0F714F8C9175C7A1 /* AchievementsViewModel.swift */,
+        55CC2E13C7EC4966B23E70E1 /* AchievementPatchView.swift */,
+        24B1E4342B1ED1E200D9D1A8 /* .gitkeep */,
+    );
+    path = Achievements;
+    sourceTree = "<group>";
 };
 24B1E4092B1ED1E200D9D1A8 /* Cloud */ = {
 isa = PBXGroup;
@@ -218,6 +249,8 @@ sourceTree = "<group>";
     children = (
         24B1E4362B1ED1E200D9D1A8 /* .gitkeep */,
         41B80E3FABD34B76BF14B28C /* ReaderProgressStore.swift */,
+        7824C8A609A54ABF8F32298F /* ReaderRecordingStore.swift */,
+        9CF18ABF9DF94A16B0C71C18 /* VocabularyStore.swift */,
     );
     path = Storage;
     sourceTree = "<group>";
@@ -351,25 +384,36 @@ runOnlyForDeploymentPostprocessing = 0;
 24B1E4132B1ED1E200D9D1A8 /* Sources */ = {
 isa = PBXSourcesBuildPhase;
 buildActionMask = 2147483647;
-files = (
-9E6AA76793C74F82B8E410D7 /* DesignSystemColors.swift in Sources */,
-3831F7C553634EBCB8E1A799 /* DesignSystemTypography.swift in Sources */,
-F76697C4C2204146A85D8DBC /* DesignSystemSpacing.swift in Sources */,
-41B49056DF10409DA3EBFB0B /* DesignSystemCorners.swift in Sources */,
-6C9044C144E844FE804FA00F /* DesignSystemTextures.swift in Sources */,
-CD1399DE866B4DE78DFD9FFE /* DesignSystemDemoView.swift in Sources */,
-A1E95B6B65A544A2B5B0D4F1 /* DesignSystemVisualShells.swift in Sources */,
-E4F1A2B93F524B6F8D5E2D6A /* ReaderHomeView.swift in Sources */,
-E4F1A2BB3F524B6F8D5E2D6A /* ReaderView.swift in Sources */,
+    files = (
+        24B1E4172B1ED1E200D9D1A8 /* BonfireApp.swift in Sources */,
+        24B1E4182B1ED1E200D9D1A8 /* RootTabView.swift in Sources */,
+        22008F0D6AAE428D8AB6FAF6 /* AchievementsTabView.swift in Sources */,
+        B27D7E45CCFE4FD48906C366 /* BooksTabView.swift in Sources */,
+        FF22270CAE91400786DDAEB9 /* VocabularyTabView.swift in Sources */,
+        526D6BFF406C45B48224B229 /* ProfileView.swift in Sources */,
+        AD53FB825DA74C0CBFC3AD59 /* TabPlaceholderView.swift in Sources */,
+        9E6AA76793C74F82B8E410D7 /* DesignSystemColors.swift in Sources */,
+        3831F7C553634EBCB8E1A799 /* DesignSystemTypography.swift in Sources */,
+        F76697C4C2204146A85D8DBC /* DesignSystemSpacing.swift in Sources */,
+        41B49056DF10409DA3EBFB0B /* DesignSystemCorners.swift in Sources */,
+        6C9044C144E844FE804FA00F /* DesignSystemTextures.swift in Sources */,
+        CD1399DE866B4DE78DFD9FFE /* DesignSystemDemoView.swift in Sources */,
+        A1E95B6B65A544A2B5B0D4F1 /* DesignSystemVisualShells.swift in Sources */,
+        E4F1A2B93F524B6F8D5E2D6A /* ReaderHomeView.swift in Sources */,
+        E4F1A2BB3F524B6F8D5E2D6A /* ReaderView.swift in Sources */,
         E4F1A2BD3F524B6F8D5E2D6A /* ContentModels.swift in Sources */,
         73C9E4BF8C89471BB5CF420B /* ReaderState.swift in Sources */,
         EF6FACF929A59A3E446B050F /* AudioRecorderSetupView.swift in Sources */,
         528F5EA050E14427C7B92332 /* AudioRecorderSetupViewModel.swift in Sources */,
         E4F1A2BF3F524B6F8D5E2D6A /* ContentProvider.swift in Sources */,
         2EED82E675174DA6B1DDFD86 /* AnalyticsLogger.swift in Sources */,
-        24B1E4182B1ED1E200D9D1A8 /* RootTabView.swift in Sources */,
-        24B1E4172B1ED1E200D9D1A8 /* BonfireApp.swift in Sources */,
+        3BC9E2F105184C9D80BD231E /* Achievement.swift in Sources */,
+        FDC32E9234DD4CBD82654FE1 /* AchievementRegistry.swift in Sources */,
+        C45972F654074A77A45AF701 /* AchievementsViewModel.swift in Sources */,
+        2C4DC2F177CD4951B7280C22 /* AchievementPatchView.swift in Sources */,
         4CFA6382C3AA488EBAEF782D /* ReaderProgressStore.swift in Sources */,
+        AB13F528B34449AC8CA83C9F /* ReaderRecordingStore.swift in Sources */,
+        195983EEC1AA45BAA195F2A9 /* VocabularyStore.swift in Sources */,
     );
     runOnlyForDeploymentPostprocessing = 0;
 };
