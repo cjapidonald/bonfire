@@ -308,6 +308,7 @@ private struct ReaderShellView: View {
     let book: Book
 
     @StateObject private var readerState: ReaderState
+    @StateObject private var audioController: ReaderAudioController
     @State private var selectedPageIndex: Int
     @State private var isLiquidGlassEnabled: Bool = false
     @State private var lastWordInteractionDescription: String?
@@ -322,6 +323,7 @@ private struct ReaderShellView: View {
     init(book: Book) {
         self.book = book
         _readerState = StateObject(wrappedValue: ReaderState(book: book))
+        _audioController = StateObject(wrappedValue: ReaderAudioController(book: book))
         _selectedPageIndex = State(initialValue: book.pages.first?.index ?? 1)
     }
 
@@ -471,8 +473,11 @@ private struct ReaderShellView: View {
     }
 
     private var bottomBar: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             Divider()
+
+            ReaderAudioControls(controller: audioController)
+                .padding(.horizontal)
 
             if isLiquidGlassEnabled {
                 LiquidGlassSessionSummary(
@@ -484,12 +489,6 @@ private struct ReaderShellView: View {
             }
 
             HStack(spacing: 12) {
-                ReaderControlButton(title: "Record", systemImage: "record.circle")
-                    .disabled(true)
-
-                ReaderControlButton(title: "Listen", systemImage: "headphones")
-                    .disabled(true)
-
                 LiquidGlassToggle(isOn: $isLiquidGlassEnabled)
 
                 Spacer()
@@ -506,8 +505,8 @@ private struct ReaderShellView: View {
                 .disabled(true)
             }
             .padding(.horizontal)
-            .padding(.bottom, 16)
         }
+        .padding(.bottom, 16)
         .animation(.spring(response: 0.35, dampingFraction: 0.85, blendDuration: 0.2), value: isLiquidGlassEnabled)
     }
 
@@ -1574,19 +1573,132 @@ private struct WordPopoverPresentation: Identifiable, Equatable {
     }
 }
 
-private struct ReaderControlButton: View {
-    let title: String
-    let systemImage: String
+private struct ReaderAudioControls: View {
+    @ObservedObject var controller: ReaderAudioController
+
+    private var isRecording: Bool { controller.state == .recording }
+    private var isPlaying: Bool { controller.state == .playing }
 
     var body: some View {
-        Button {
-        } label: {
-            Label(title, systemImage: systemImage)
-                .font(.callout.weight(.semibold))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 12) {
+                Button {
+                    controller.startRecording()
+                } label: {
+                    Label(isRecording ? "Recording" : "Record", systemImage: isRecording ? "record.circle.fill" : "record.circle")
+                        .font(.title3.weight(.semibold))
+                        .padding(.vertical, 14)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .tint(.red)
+                .disabled(isRecording || isPlaying)
+                .accessibilityHint(Text("Starts a new recording"))
+
+                Button {
+                    controller.stop()
+                } label: {
+                    Label("Stop", systemImage: "stop.circle")
+                        .font(.title3.weight(.semibold))
+                        .padding(.vertical, 14)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                .tint(.orange)
+                .disabled(!isRecording && !isPlaying)
+                .accessibilityHint(Text("Stops the current recording or playback"))
+
+                Button {
+                    controller.togglePlayback()
+                } label: {
+                    Label(isPlaying ? "Listening" : "Listen", systemImage: isPlaying ? "pause.circle" : "play.circle")
+                        .font(.title3.weight(.semibold))
+                        .padding(.vertical, 14)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .tint(.blue)
+                .disabled(controller.latestSession == nil || isRecording)
+                .accessibilityHint(Text("Replays the most recent recording"))
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                AudioMeterView(level: controller.meterLevel, state: controller.state)
+                    .frame(height: 26)
+
+                HStack(alignment: .center, spacing: 12) {
+                    let total = isRecording ? controller.elapsedTime : controller.duration
+                    Text("\(controller.formattedTime(controller.elapsedTime)) / \(controller.formattedTime(total))")
+                        .font(.title2.monospacedDigit())
+                        .fontWeight(.bold)
+                        .accessibilityLabel(Text("Elapsed time"))
+                        .accessibilityValue(Text("\(controller.formattedTime(controller.elapsedTime)) of \(controller.formattedTime(total))"))
+
+                    Spacer()
+
+                    Picker("Playback Speed", selection: Binding(
+                        get: { controller.playbackSpeed },
+                        set: { controller.setPlaybackSpeed($0) }
+                    )) {
+                        ForEach(ReaderAudioController.PlaybackSpeed.allCases) { speed in
+                            Text(speed.label).tag(speed)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .controlSize(.large)
+                    .frame(maxWidth: 260)
+                    .accessibilityLabel(Text("Playback speed"))
+                    .disabled(controller.latestSession == nil && !isPlaying)
+                }
+            }
         }
-        .buttonStyle(.bordered)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemBackground))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+        )
+    }
+}
+
+private struct AudioMeterView: View {
+    let level: Float
+    let state: ReaderAudioController.State
+
+    private var fillColor: Color {
+        switch state {
+        case .recording:
+            return .red
+        case .playing:
+            return .blue
+        case .idle:
+            return Color.accentColor
+        }
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let normalized = max(0, min(level, 1))
+            let width = normalized == 0 ? 0 : geometry.size.width * CGFloat(max(normalized, 0.08))
+
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.primary.opacity(0.1))
+
+                Capsule()
+                    .fill(fillColor.opacity(0.85))
+                    .frame(width: width)
+                    .animation(.easeOut(duration: 0.15), value: normalized)
+            }
+        }
+        .accessibilityLabel(Text("Audio level"))
+        .accessibilityValue(Text("\(Int(level * 100)) percent"))
     }
 }
 
