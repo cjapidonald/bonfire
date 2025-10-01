@@ -313,12 +313,20 @@ private struct ReaderShellView: View {
     @State private var isLiquidGlassEnabled: Bool = false
     @State private var lastWordInteractionDescription: String?
     @ObservedObject private var vocabularyStore = VocabularyStore.shared
+    @ObservedObject private var progressStore = ReaderProgressStore.shared
     @State private var activePopover: WordPopoverPresentation?
     @State private var totalWordsCounted: Int = 0
     @State private var pageUniqueWordSets: [Int: Set<String>] = [:]
     @State private var lastCountTimestamps: [String: Date] = [:]
+    @State private var sessionFeedback: SessionFeedback?
+    @State private var isSubmitting: Bool = false
+    @State private var hasObservedInitialLevel: Bool = false
+    @State private var lastDifficultyChange: Date?
+    @State private var lastSubmittedSessionID: UUID?
+    @State private var observedSessionID: UUID?
 
     private let translationProvider = WordTranslationProvider.shared
+    private let sessionValidator = SessionValidator()
 
     init(book: Book) {
         self.book = book
@@ -371,6 +379,31 @@ private struct ReaderShellView: View {
                 EmptyView()
             }
         }
+        .onReceive(readerState.$level) { _ in
+            if hasObservedInitialLevel {
+                lastDifficultyChange = Date()
+            } else {
+                hasObservedInitialLevel = true
+            }
+        }
+        .onReceive(audioController.$latestSession) { session in
+            if let session {
+                if observedSessionID != session.id {
+                    observedSessionID = session.id
+                    lastSubmittedSessionID = nil
+                }
+            } else {
+                observedSessionID = nil
+                lastSubmittedSessionID = nil
+            }
+        }
+        .alert(item: $sessionFeedback) { feedback in
+            Alert(
+                title: Text(feedback.title),
+                message: Text(feedback.message),
+                dismissButton: .default(Text("OK"))
+            )
+        }
     }
 
     private var topBar: some View {
@@ -403,7 +436,15 @@ private struct ReaderShellView: View {
 
             Spacer()
 
-            ProgressRing(progress: readingProgress)
+            VStack(spacing: 12) {
+                ProgressRing(progress: readingProgress)
+
+                Label("\(progressStore.totalStars)", systemImage: "star.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.yellow.opacity(0.85))
+                    .accessibilityLabel(Text("Total stars"))
+                    .accessibilityValue(Text("\(progressStore.totalStars)"))
+            }
         }
         .padding(.horizontal)
         .padding(.top, 20)
@@ -493,8 +534,7 @@ private struct ReaderShellView: View {
 
                 Spacer()
 
-                Button {
-                } label: {
+                Button(action: submitSession) {
                     Text("Submit Reading")
                         .font(.callout.weight(.semibold))
                         .padding(.horizontal, 16)
@@ -502,7 +542,7 @@ private struct ReaderShellView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
-                .disabled(true)
+                .disabled(!canSubmitSession)
             }
             .padding(.horizontal)
         }
@@ -517,13 +557,124 @@ private struct ReaderShellView: View {
         return index + 1
     }
 
+    private var canSubmitSession: Bool {
+        guard !isSubmitting else { return false }
+        guard audioController.state == .idle else { return false }
+        guard let session = audioController.latestSession else { return false }
+        guard totalWordsCounted > 0 else { return false }
+        if let submittedID = lastSubmittedSessionID, submittedID == session.id {
+            return false
+        }
+        return true
+    }
+
     private var readingProgress: Double {
         guard !book.pages.isEmpty else { return 0 }
-        return Double(currentPagePosition) / Double(book.pages.count)
+        let progress = progressStore.progress(for: book)
+        let visitedCount = progress.visitedPageIndices.intersection(book.pages.map { $0.index }).count
+        return Double(visitedCount) / Double(book.pages.count)
     }
 
     private var uniqueWordsOnCurrentPageCount: Int {
         pageUniqueWordSets[selectedPageIndex]?.count ?? 0
+    }
+
+    private func submitSession() {
+        guard canSubmitSession, let session = audioController.latestSession else { return }
+
+        isSubmitting = true
+        defer { isSubmitting = false }
+
+        let input = SessionValidator.Input(
+            totalWords: totalWordsCounted,
+            duration: session.duration,
+            sessionEndedAt: session.createdAt,
+            lastDifficultyChange: lastDifficultyChange
+        )
+        let result = sessionValidator.validate(input)
+
+        var metadata: [String: String] = [
+            "book_id": book.id.uuidString,
+            "level": readerState.level.rawValue,
+            "words_counted": String(totalWordsCounted),
+            "duration_seconds": String(format: "%.2f", session.duration),
+            "wpm": String(format: "%.1f", result.wordsPerMinute)
+        ]
+
+        switch result.status {
+        case .accepted:
+            let uniqueWordCounts = pageUniqueWordSets.mapValues { $0.count }
+            let reward = progressStore.recordSession(
+                for: book,
+                level: readerState.level,
+                totalWordsCounted: totalWordsCounted,
+                uniqueWordCounts: uniqueWordCounts,
+                recording: session,
+                qualityFactor: result.qualityFactor,
+                lastViewedPageIndex: selectedPageIndex
+            )
+
+            lastSubmittedSessionID = session.id
+            activePopover = nil
+
+            let summary = progressSummaryText(for: reward.updatedProgress)
+            sessionFeedback = SessionFeedback.success(stars: reward.starsAwarded, summary: summary)
+            if let message = sessionFeedback?.message {
+                lastWordInteractionDescription = "⭐️ \(message)"
+            }
+
+            metadata["status"] = "accepted"
+            metadata["stars_awarded"] = String(reward.starsAwarded)
+            metadata["quality_factor"] = String(format: "%.2f", result.qualityFactor)
+            metadata["new_pages"] = String(reward.newlyVisitedPageIndices.count)
+            metadata["pages_visited_total"] = String(reward.updatedProgress.visitedPageIndices.count)
+
+            AnalyticsLogger.shared.log(event: "reading_session_submit", metadata: metadata)
+
+            resetSessionTracking()
+        case .rejected(let reason):
+            let message = result.helpfulTip ?? "This reading session didn't meet the requirements to award stars."
+            sessionFeedback = SessionFeedback.failure(message: message)
+            lastWordInteractionDescription = message
+
+            metadata["status"] = "rejected"
+            for (key, value) in failureMetadata(for: reason) {
+                metadata[key] = value
+            }
+
+            AnalyticsLogger.shared.log(event: "reading_session_submit", metadata: metadata)
+        }
+    }
+
+    private func resetSessionTracking() {
+        totalWordsCounted = 0
+        pageUniqueWordSets = [:]
+        lastCountTimestamps = [:]
+    }
+
+    private func progressSummaryText(for progress: BookProgress) -> String {
+        let visited = progress.visitedPageIndices.count
+        let total = book.pages.count
+        return "Progress: \(visited)/\(total) pages complete."
+    }
+
+    private func failureMetadata(for reason: SessionValidator.Result.FailureReason) -> [String: String] {
+        switch reason {
+        case .noWords:
+            return ["reason": "no_words"]
+        case .zeroDuration:
+            return ["reason": "zero_duration"]
+        case .paceOutOfRange(let wordsPerMinute):
+            return [
+                "reason": "pace_out_of_range",
+                "observed_wpm": String(format: "%.1f", wordsPerMinute)
+            ]
+        case .belowMinimumDuration(let required):
+            return [
+                "reason": "below_minimum_duration",
+                "required_seconds": String(format: "%.2f", required)
+            ]
+        }
     }
 
     private func text(for page: Page) -> String {
@@ -1486,6 +1637,24 @@ private struct WordTranslationPopover: View {
     }
 }
 
+private struct SessionFeedback: Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
+
+    static func success(stars: Int, summary: String) -> SessionFeedback {
+        let starText = stars == 1 ? "1 star" : "\(stars) stars"
+        return SessionFeedback(
+            title: "Great Job!",
+            message: "You earned \(starText) this session. \(summary)"
+        )
+    }
+
+    static func failure(message: String) -> SessionFeedback {
+        SessionFeedback(title: "Session Not Counted", message: message)
+    }
+}
+
 private struct LiquidGlassSessionSummary: View {
     let totalCount: Int
     let uniqueCount: Int
@@ -1740,13 +1909,6 @@ private struct ProgressRing: View {
 private extension CGRect {
     var center: CGPoint {
         CGPoint(x: midX, y: midY)
-    }
-}
-
-private extension Page {
-    func text(for level: Level) -> String {
-        // Future stories may ship multiple difficulty variants; for now we default to the primary text.
-        primaryText
     }
 }
 
