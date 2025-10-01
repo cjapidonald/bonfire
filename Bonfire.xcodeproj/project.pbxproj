@@ -36,6 +36,8 @@ E4F1A2C13F524B6F8D5E2D6A /* the_little_river_lantern.json in Resources */ = {isa
 EF6FACF929A59A3E446B050F /* AudioRecorderSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD7222B1E55E2511CC51D059 /* AudioRecorderSetupView.swift */; };
 528F5EA050E14427C7B92332 /* AudioRecorderSetupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2BC76464C02EAD571658D10 /* AudioRecorderSetupViewModel.swift */; };
 4CFA6382C3AA488EBAEF782D /* ReaderProgressStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41B80E3FABD34B76BF14B28C /* ReaderProgressStore.swift */; };
+3CA1C5E06146FB9D59E9704C /* PrivateSyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A4FF8317B7790BC8162E2B /* PrivateSyncModels.swift */; };
+2143C8AC35491519F29809EB /* PrivateSyncStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5B8DB44A590C2E6A24CBA7 /* PrivateSyncStore.swift */; };
 3BC9E2F105184C9D80BD231E /* Achievement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C1A5436E192431FAC27C24A /* Achievement.swift */; };
 FDC32E9234DD4CBD82654FE1 /* AchievementRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 227EE671A9F74842B81A1E5C /* AchievementRegistry.swift */; };
 C45972F654074A77A45AF701 /* AchievementsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D3FD20C0F714F8C9175C7A1 /* AchievementsViewModel.swift */; };
@@ -77,7 +79,9 @@ B8D44E7E5E614B80A8DAE501 /* starry_forest_story.json */ = {isa = PBXFileReferenc
 8D3FD20C0F714F8C9175C7A1 /* AchievementsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementsViewModel.swift; sourceTree = "<group>"; };
 55CC2E13C7EC4966B23E70E1 /* AchievementPatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementPatchView.swift; sourceTree = "<group>"; };
 24B1E4352B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
-24B1E4362B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
+        24B1E4362B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
+        A3A4FF8317B7790BC8162E2B /* PrivateSyncModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage/PrivateSyncModels.swift; sourceTree = "<group>"; };
+        DB5B8DB44A590C2E6A24CBA7 /* PrivateSyncStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage/PrivateSyncStore.swift; sourceTree = "<group>"; };
 7824C8A609A54ABF8F32298F /* ReaderRecordingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderRecordingStore.swift; sourceTree = "<group>"; };
 9CF18ABF9DF94A16B0C71C18 /* VocabularyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabularyStore.swift; sourceTree = "<group>"; };
 24B1E4372B1ED1E200D9D1A8 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
@@ -287,6 +291,8 @@ sourceTree = "<group>";
     children = (
         24B1E4362B1ED1E200D9D1A8 /* .gitkeep */,
         41B80E3FABD34B76BF14B28C /* ReaderProgressStore.swift */,
+        A3A4FF8317B7790BC8162E2B /* PrivateSyncModels.swift */,
+        DB5B8DB44A590C2E6A24CBA7 /* PrivateSyncStore.swift */,
         7824C8A609A54ABF8F32298F /* ReaderRecordingStore.swift */,
         9CF18ABF9DF94A16B0C71C18 /* VocabularyStore.swift */,
         3E1D2C4B5A6978879ABCDEF0 /* UserProfileStore.swift */,
@@ -452,6 +458,8 @@ buildActionMask = 2147483647;
         C45972F654074A77A45AF701 /* AchievementsViewModel.swift in Sources */,
         2C4DC2F177CD4951B7280C22 /* AchievementPatchView.swift in Sources */,
         4CFA6382C3AA488EBAEF782D /* ReaderProgressStore.swift in Sources */,
+        3CA1C5E06146FB9D59E9704C /* PrivateSyncModels.swift in Sources */,
+        2143C8AC35491519F29809EB /* PrivateSyncStore.swift in Sources */,
         AB13F528B34449AC8CA83C9F /* ReaderRecordingStore.swift in Sources */,
         195983EEC1AA45BAA195F2A9 /* VocabularyStore.swift in Sources */,
         E5F0C8A7A9E44929B0CF8F6D /* CloudContentRecord.swift in Sources */,

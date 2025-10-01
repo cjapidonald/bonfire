@@ -16,6 +16,7 @@ final class UserProfileStore: ObservableObject {
     private let storageKey = "user.profile.record"
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
+    private let privateSync = PrivateSyncCoordinator.shared
 
     init(userDefaults: UserDefaults = .standard, initialProfile: UserProfile? = nil) {
         self.userDefaults = userDefaults
@@ -40,6 +41,7 @@ final class UserProfileStore: ObservableObject {
         guard let data = try? encoder.encode(profile) else { return }
         userDefaults.set(data, forKey: storageKey)
         self.profile = profile
+        enqueuePrivateSync(for: profile)
     }
 
     func saveProfile(id: String, displayName: String, avatarIdentifier: String, language: AppLanguage) {
@@ -56,6 +58,24 @@ final class UserProfileStore: ObservableObject {
         guard var existingProfile = profile else { return }
         existingProfile.interfaceLanguage = language
         saveProfile(existingProfile)
+    }
+
+    private func enqueuePrivateSync(for profile: UserProfile) {
+        let readerStore = ReaderProgressStore.shared
+        let streak = readerStore.currentStreakCount
+        let lastSessionAt = readerStore.mostRecentBookProgress?.lastReadAt
+        let snapshot = UserProfileSnapshot(
+            recordName: profile.id,
+            displayName: profile.displayName,
+            preferredLocale: profile.interfaceLanguage.localeIdentifier,
+            readingStreak: streak,
+            lastSessionAt: lastSessionAt,
+            modifiedAt: Date()
+        )
+
+        Task(priority: .utility) { [snapshot] in
+            await privateSync.upsertUserProfile(snapshot)
+        }
     }
 }
 
