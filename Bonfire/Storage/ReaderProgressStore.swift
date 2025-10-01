@@ -47,6 +47,7 @@ final class ReaderProgressStore: ObservableObject {
     private let dailySummariesKey = "reader.progress.dailySummaries"
     private let baselineWordsPerMinute: Double = 160
     private var calendar = Calendar.current
+    private let privateSync = PrivateSyncCoordinator.shared
 
     init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults
@@ -121,11 +122,71 @@ final class ReaderProgressStore: ObservableObject {
 
         updateDailySummary(for: recording.createdAt, duration: recording.duration, stars: starsAwarded)
 
-        return SessionReward(
+        let reward = SessionReward(
             starsAwarded: starsAwarded,
             newlyVisitedPageIndices: newlyVisited,
             updatedProgress: progress
         )
+
+        schedulePrivateSync(
+            for: book,
+            sessionVisited: sessionVisited,
+            totalWordsCounted: totalWordsCounted,
+            recording: recording,
+            updatedProgress: progress
+        )
+
+        return reward
+    }
+
+    private func schedulePrivateSync(
+        for book: Book,
+        sessionVisited: Set<Int>,
+        totalWordsCounted: Int,
+        recording: ReaderRecordingSession,
+        updatedProgress: BookProgress
+    ) {
+        let startIndex = sessionVisited.min()
+        let endIndex = sessionVisited.max()
+        let now = Date()
+
+        let sessionSnapshot = ReadingSessionSnapshot(
+            recordName: UUID().uuidString,
+            bookID: book.id,
+            startedAt: recording.createdAt.addingTimeInterval(-recording.duration),
+            endedAt: recording.createdAt,
+            durationSeconds: recording.duration,
+            wordsRead: totalWordsCounted,
+            startPageIndex: startIndex,
+            endPageIndex: endIndex,
+            completedPageIndices: sessionVisited,
+            modifiedAt: now
+        )
+
+        let percentComplete: Double
+        if book.pages.isEmpty {
+            percentComplete = 0
+        } else {
+            percentComplete = Double(updatedProgress.visitedPageIndices.count) / Double(book.pages.count)
+        }
+
+        let bookSnapshot = BookProgressSnapshot(
+            recordName: book.id.uuidString,
+            bookID: book.id,
+            lastPageIndex: updatedProgress.currentPageIndex,
+            percentComplete: percentComplete,
+            lastOpenedAt: updatedProgress.lastReadAt,
+            completedAt: updatedProgress.isCompleted ? updatedProgress.lastReadAt : nil,
+            visitedPageIndices: updatedProgress.visitedPageIndices,
+            modifiedAt: now
+        )
+
+        Task(priority: .utility) { [sessionSnapshot, bookSnapshot] in
+            await privateSync.persistReadingSession(
+                sessionSnapshot,
+                bookProgress: bookSnapshot
+            )
+        }
     }
 
     var todaySummary: DailyReadingSummary {
