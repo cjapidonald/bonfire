@@ -137,6 +137,21 @@ private struct ReadingDashboardCard: View {
         return formatter
     }()
 
+    private var accessibilitySummary: String {
+        var components: [String] = ["Today's progress."]
+        components.append("\(minutesToday) minutes read today.")
+        components.append("\(starsToday) stars earned today.")
+
+        if let bookProgress {
+            components.append("Current book \(bookProgress.title), \(bookProgress.percentComplete) percent complete.")
+        } else {
+            components.append("No current book progress yet.")
+        }
+
+        components.append("Weekly streak \(streakCount) \(streakCount == 1 ? "day" : "days").")
+        return components.joined(separator: " ")
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text("Today's Progress")
@@ -171,6 +186,8 @@ private struct ReadingDashboardCard: View {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(Color(uiColor: .secondarySystemGroupedBackground))
         )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(accessibilitySummary))
     }
 
     private var currentBookView: some View {
@@ -325,6 +342,12 @@ private struct DashboardMetricView: View {
 private struct BookCardView: View {
     let book: Book
 
+    private var accessibilityLabelText: String {
+        let tagSummary = book.tags.joined(separator: ", ")
+        guard !tagSummary.isEmpty else { return book.title }
+        return "\(book.title). \(tagSummary)."
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -350,6 +373,10 @@ private struct BookCardView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(uiColor: .secondarySystemGroupedBackground))
         )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(accessibilityLabelText))
+        .accessibilityHint(Text(String(localized: "reader.bookCard.hint")))
+        .accessibilityAddTraits(.isButton)
     }
 }
 
@@ -370,6 +397,7 @@ private struct TagList: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityHidden(true)
     }
 }
 
@@ -1178,12 +1206,22 @@ private struct DifficultyGearControl: View {
                     )
 
                 ForEach(levels.indices, id: \.self) { index in
-                    tick(isActive: index == activeIndex)
-                        .offset(y: step * CGFloat(index))
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            select(levels[index])
-                        }
+                    let option = levels[index]
+
+                    Button {
+                        select(option)
+                    } label: {
+                        tick(isActive: index == activeIndex)
+                            .accessibilityHidden(true)
+                    }
+                    .buttonStyle(.plain)
+                    .offset(y: step * CGFloat(index))
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(Text(accessibilityLabel(for: option)))
+                    .accessibilityHint(Text(accessibilityHint(for: index)))
+                    .accessibilityValue(Text(accessibilityValue(for: index)))
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAddTraits(index == activeIndex ? .isSelected : [])
                 }
 
                 gearKnob
@@ -1228,6 +1266,9 @@ private struct DifficultyGearControl: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .buttonStyle(.plain)
+                .accessibilityHint(Text(accessibilityHint(for: index)))
+                .accessibilityAddTraits(.isButton)
+                .accessibilityAddTraits(index == activeIndex ? .isSelected : [])
 
                 if index != levels.count - 1 {
                     Spacer(minLength: 0)
@@ -1277,6 +1318,7 @@ private struct DifficultyGearControl: View {
         }
         .rotationEffect(.degrees(gearRotation))
         .shadow(color: .black.opacity(0.2), radius: 12, x: 0, y: 10)
+        .accessibilityHidden(true)
     }
 
     private func select(_ newLevel: Level) {
@@ -1295,6 +1337,22 @@ private struct DifficultyGearControl: View {
         case .b2:
             return "Advanced challenge"
         }
+    }
+
+    private func accessibilityLabel(for level: Level) -> String {
+        String(format: String(localized: "reader.gear.label"), level.rawValue)
+    }
+
+    private func accessibilityHint(for index: Int) -> String {
+        index == activeIndex
+            ? String(localized: "reader.gear.hint.selected")
+            : String(localized: "reader.gear.hint.choose")
+    }
+
+    private func accessibilityValue(for index: Int) -> String {
+        index == activeIndex
+            ? String(localized: "reader.gear.value.selected")
+            : String(localized: "reader.gear.value.notSelected")
     }
 
     private func syncState(animated: Bool) {
@@ -1917,6 +1975,7 @@ private struct WordTranslationPopover: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.small)
+            .accessibilityHint(Text(String(localized: "reader.word.saveHint")))
         }
         .padding(16)
         .background(
@@ -2170,6 +2229,7 @@ private struct LiquidGlassToggle: View {
                 .font(.callout.weight(.semibold))
         }
         .toggleStyle(.switch)
+        .accessibilityHint(Text(String(localized: "reader.toggle.liquidGlassHint")))
     }
 }
 

@@ -30,6 +30,9 @@ struct WordDetectingTextView: UIViewRepresentable {
         textView.font = UIFont.preferredFont(forTextStyle: .body)
         textView.textContainerInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
         textView.textContainer.lineFragmentPadding = 0
+        textView.isAccessibilityElement = true
+        textView.accessibilityTraits = [.staticText]
+        textView.accessibilityHint = String(localized: "reader.page.voiceoverHint")
         textView.onSingleTap = { token in
             context.coordinator.handleSingleTap(token)
         }
