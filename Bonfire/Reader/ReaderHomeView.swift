@@ -651,43 +651,11 @@ private struct ReaderShellView: View {
 
     private var topBar: some View {
         HStack(alignment: .center, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(book.title)
-                    .font(.title3.weight(.semibold))
+            Text(book.title)
+                .font(.title3.weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text("By \(book.author)")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-
-                if let subtitle = book.subtitle {
-                    Text(subtitle)
-                        .font(.footnote)
-                        .foregroundStyle(Color.secondary.opacity(0.7))
-                }
-
-                TagList(tags: book.tags)
-                    .padding(.top, 8)
-
-                if !book.summary.isEmpty {
-                    Text(book.summary)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 8)
-                }
-            }
-
-            Spacer()
-
-            VStack(spacing: 12) {
-                ProgressRing(progress: readingProgress)
-
-                Label("\(progressStore.totalStars)", systemImage: "star.fill")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.yellow.opacity(0.85))
-                    .accessibilityLabel(Text("Total stars"))
-                    .accessibilityValue(Text("\(progressStore.totalStars)"))
-            }
+            ProgressRing(progress: readingProgress)
         }
         .padding(.horizontal)
         .padding(.top, 20)
