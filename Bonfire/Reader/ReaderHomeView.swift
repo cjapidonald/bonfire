@@ -595,6 +595,11 @@ private struct ReaderShellView: View {
     @State private var lastDifficultyChange: Date?
     @State private var lastSubmittedSessionID: UUID?
     @State private var observedSessionID: UUID?
+    @StateObject private var fpsMonitor = FPSMonitor()
+    @State private var lowFPSSampleStart: Date?
+    @State private var hasAppliedPerformanceGuard = false
+
+    @EnvironmentObject private var performanceSettings: PerformanceSettings
 
     private let translationProvider = WordTranslationProvider.shared
     private let sessionValidator = SessionValidator()
@@ -648,6 +653,35 @@ private struct ReaderShellView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 EmptyView()
+            }
+        }
+        .overlay(alignment: .topTrailing) {
+            FPSBadge(fps: fpsMonitor.framesPerSecond)
+                .padding(.top, 12)
+                .padding(.trailing, 20)
+        }
+        .onAppear {
+            fpsMonitor.start()
+        }
+        .onDisappear {
+            fpsMonitor.stop()
+            lowFPSSampleStart = nil
+            hasAppliedPerformanceGuard = false
+        }
+        .onReceive(fpsMonitor.$framesPerSecond) { fps in
+            guard fps > 0 else { return }
+
+            if fps < 50 {
+                if let start = lowFPSSampleStart {
+                    if Date().timeIntervalSince(start) >= 2, !hasAppliedPerformanceGuard {
+                        performanceSettings.reduceForLowPerformance()
+                        hasAppliedPerformanceGuard = true
+                    }
+                } else {
+                    lowFPSSampleStart = Date()
+                }
+            } else {
+                lowFPSSampleStart = nil
             }
         }
         .onReceive(readerState.$level) { _ in
@@ -710,6 +744,8 @@ private struct ReaderShellView: View {
                     text: text(for: page),
                     activePopover: $activePopover,
                     isLiquidGlassEnabled: isLiquidGlassEnabled,
+                    particleIntensity: performanceSettings.particleIntensity,
+                    blurStrength: performanceSettings.blurStrength,
                     onSingleTap: { selection in
                         handleSingleTap(on: page, selection: selection)
                     },
@@ -1103,6 +1139,7 @@ private struct DifficultyGearControl: View {
 
     private let levels = Level.allCases
     private let knobSize: CGFloat = 92
+    @EnvironmentObject private var performanceSettings: PerformanceSettings
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -1261,7 +1298,7 @@ private struct DifficultyGearControl: View {
         ZStack {
             Circle()
                 .fill(Color.accentColor.opacity(0.2))
-                .blur(radius: 14)
+                .blur(radius: 14 * CGFloat(performanceSettings.blurStrength))
 
             Circle()
                 .fill(
@@ -1346,6 +1383,8 @@ private struct BookSpreadView: View {
     let text: String
     @Binding var activePopover: WordPopoverPresentation?
     var isLiquidGlassEnabled: Bool
+    var particleIntensity: Double = 1.0
+    var blurStrength: Double = 1.0
     var onSingleTap: (WordDetectingTextView.WordSelection) -> Void = { _ in }
     var onDoubleTap: (WordDetectingTextView.WordSelection) -> Void = { _ in }
     var onWordCounted: (WordDetectingTextView.WordSelection) -> Bool = { _ in false }
@@ -1371,6 +1410,8 @@ private struct BookSpreadView: View {
                         text: text,
                         activePopover: $activePopover,
                         isLiquidGlassEnabled: isLiquidGlassEnabled,
+                        particleIntensity: particleIntensity,
+                        blurStrength: blurStrength,
                         onSingleTap: onSingleTap,
                         onDoubleTap: onDoubleTap,
                         onAddToVocabulary: onAddToVocabulary,
@@ -1438,6 +1479,8 @@ private struct RightPageContent: View {
     let text: String
     @Binding var activePopover: WordPopoverPresentation?
     var isLiquidGlassEnabled: Bool
+    var particleIntensity: Double = 1.0
+    var blurStrength: Double = 1.0
     var onSingleTap: (WordDetectingTextView.WordSelection) -> Void
     var onDoubleTap: (WordDetectingTextView.WordSelection) -> Void
     var onAddToVocabulary: (WordPopoverPresentation) -> Void
@@ -1479,11 +1522,11 @@ private struct RightPageContent: View {
                 ZStack(alignment: .topLeading) {
                     if isLiquidGlassEnabled, glassSize != .zero {
                         ZStack {
-                            LiquidGlassBlobView(size: glassSize, isDragging: isDraggingGlass)
+                            LiquidGlassBlobView(size: glassSize, isDragging: isDraggingGlass, blurStrength: blurStrength)
                                 .accessibilityHidden(true)
 
                             if let starburstID = activeStarburstID {
-                                StarburstView(triggerID: starburstID)
+                                StarburstView(triggerID: starburstID, particleIntensity: particleIntensity)
                                     .frame(width: glassSize.width * 1.15, height: glassSize.height * 1.15)
                                     .allowsHitTesting(false)
                                     .transition(.opacity)
@@ -1751,6 +1794,7 @@ private struct RightPageContent: View {
 private struct LiquidGlassBlobView: View {
     let size: CGSize
     let isDragging: Bool
+    var blurStrength: Double = 1.0
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityContrast) private var accessibilityContrast
@@ -1802,7 +1846,7 @@ private struct LiquidGlassBlobView: View {
                     )
                     .frame(width: size.width * 0.6, height: size.height * 0.32)
                     .offset(x: size.width * -0.12, y: size.height * -0.28)
-                    .blur(radius: 6)
+                    .blur(radius: 6 * CGFloat(blurStrength))
                     .blendMode(.screen)
             )
             .overlay(
@@ -1831,7 +1875,7 @@ private struct LiquidGlassBlobView: View {
                     )
                     .frame(width: size.width * 0.3, height: size.width * 0.3)
                     .offset(x: size.width * -0.18, y: size.height * 0.45)
-                    .blur(radius: 8)
+                    .blur(radius: 8 * CGFloat(blurStrength))
                     .blendMode(.plusLighter)
             )
             .overlay(
@@ -1854,43 +1898,57 @@ private struct LiquidGlassBlobView: View {
 
 private struct StarburstView: View {
     let triggerID: UUID
+    var particleIntensity: Double = 1.0
 
     @State private var animate: Bool = false
 
     var body: some View {
-        ZStack {
-            ForEach(0..<6, id: \.self) { index in
-                let angle = Double(index) / 6.0 * (.pi * 2)
-                let radius: CGFloat = index.isMultiple(of: 2) ? 28 : 20
-                let symbolSize: CGFloat = index.isMultiple(of: 2) ? 18 : 14
+        Group {
+            if activeSparkleCount == 0 {
+                EmptyView()
+            } else {
+                ZStack {
+                    ForEach(0..<activeSparkleCount, id: \.self) { index in
+                        let angle = Double(index) / Double(activeSparkleCount) * (.pi * 2)
+                        let radius: CGFloat = index.isMultiple(of: 2) ? 28 : 20
+                        let symbolSize: CGFloat = index.isMultiple(of: 2) ? 18 : 14
 
-                Image(systemName: "sparkle")
-                    .font(.system(size: symbolSize, weight: .semibold))
-                    .foregroundStyle(Color.yellow.opacity(0.85))
-                    .scaleEffect(animate ? 1 : 0.4)
-                    .opacity(animate ? 0 : 1)
-                    .offset(
-                        x: animate ? CGFloat(cos(angle)) * radius : 0,
-                        y: animate ? CGFloat(sin(angle)) * radius : 0
-                    )
-                    .blendMode(.plusLighter)
-                    .animation(.easeOut(duration: 0.55), value: animate)
+                        Image(systemName: "sparkle")
+                            .font(.system(size: symbolSize, weight: .semibold))
+                            .foregroundStyle(Color.yellow.opacity(0.85))
+                            .scaleEffect(animate ? 1 : 0.4)
+                            .opacity(animate ? 0 : 1)
+                            .offset(
+                                x: animate ? CGFloat(cos(angle)) * radius : 0,
+                                y: animate ? CGFloat(sin(angle)) * radius : 0
+                            )
+                            .blendMode(.plusLighter)
+                            .animation(.easeOut(duration: 0.55), value: animate)
+                    }
+
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 22))
+                        .foregroundStyle(Color.yellow.opacity(0.75))
+                        .scaleEffect(animate ? 1.35 : 1)
+                        .opacity(animate ? 0 : 0.85)
+                        .blendMode(.plusLighter)
+                        .animation(.easeOut(duration: 0.5), value: animate)
+                }
             }
-
-            Image(systemName: "sparkles")
-                .font(.system(size: 22))
-                .foregroundStyle(Color.yellow.opacity(0.75))
-                .scaleEffect(animate ? 1.35 : 1)
-                .opacity(animate ? 0 : 0.85)
-                .blendMode(.plusLighter)
-                .animation(.easeOut(duration: 0.5), value: animate)
         }
         .id(triggerID)
         .onAppear {
+            guard activeSparkleCount > 0 else { return }
             withAnimation(.easeOut(duration: 0.6)) {
                 animate = true
             }
         }
+    }
+
+    private var activeSparkleCount: Int {
+        let clamped = max(0, min(particleIntensity, 1))
+        if clamped <= 0.05 { return 0 }
+        return max(2, Int(ceil(6 * clamped)))
     }
 }
 
@@ -2012,6 +2070,29 @@ private struct LiquidGlassSessionSummary: View {
                     .foregroundStyle(.primary)
             }
         }
+    }
+}
+
+private struct FPSBadge: View {
+    let fps: Double
+
+    private var formattedFPS: String {
+        let clamped = max(0, min(fps, 240))
+        return String(format: "%.0f", clamped)
+    }
+
+    var body: some View {
+        Label {
+            Text("\(formattedFPS) FPS")
+                .font(.caption2.monospacedDigit())
+        } icon: {
+            Image(systemName: "speedometer")
+        }
+        .labelStyle(.titleAndIcon)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .background(.ultraThinMaterial, in: Capsule())
+        .shadow(radius: 6, x: 0, y: 2)
     }
 }
 
@@ -2234,6 +2315,7 @@ private extension CGRect {
 struct ReaderHomeView_Previews: PreviewProvider {
     static var previews: some View {
         ReaderHomeView()
+            .environmentObject(PerformanceSettings.shared)
     }
 }
 #endif

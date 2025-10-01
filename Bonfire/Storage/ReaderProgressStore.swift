@@ -318,3 +318,59 @@ final class ReaderProgressStore: ObservableObject {
         }
     }
 }
+
+#if DEBUG
+extension ReaderProgressStore {
+    func debugReset() {
+        progressByBook = [:]
+        totalStars = 0
+        dailySummaries = [:]
+        userDefaults.removeObject(forKey: progressKey)
+        userDefaults.removeObject(forKey: starsKey)
+        userDefaults.removeObject(forKey: dailySummariesKey)
+    }
+
+    func debugSeedProgress() {
+        let books = ContentProvider.shared.books
+        let now = Date()
+
+        var seeded: [Book.ID: BookProgress] = [:]
+        for index in 0..<max(books.count, 5) {
+            let bookID: UUID
+            let pageCount: Int
+
+            if index < books.count {
+                let book = books[index]
+                bookID = book.id
+                pageCount = max(book.pages.count, 12)
+            } else {
+                bookID = UUID()
+                pageCount = 12
+            }
+
+            let visited = Set(0..<pageCount)
+            let progress = BookProgress(
+                bookID: bookID,
+                currentPageIndex: pageCount - 1,
+                isCompleted: true,
+                lastReadAt: now.addingTimeInterval(TimeInterval(-index * 3600)),
+                visitedPageIndices: visited
+            )
+            seeded[bookID] = progress
+        }
+
+        progressByBook = seeded
+        persistProgress()
+    }
+
+    func debugBoostStarCount() {
+        totalStars = max(totalStars, 250)
+        persistStarTotal()
+        let today = normalizedDate(for: Date())
+        var summary = dailySummaries[today] ?? DailyReadingSummary(date: today)
+        summary.addSession(duration: 45 * 60, stars: 75)
+        dailySummaries[today] = summary
+        persistDailySummaries()
+    }
+}
+#endif
