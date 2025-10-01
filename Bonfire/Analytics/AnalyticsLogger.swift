@@ -11,6 +11,8 @@ final class AnalyticsLogger {
     ///   - event: The event name to log.
     ///   - metadata: Additional key-value pairs for context.
     func log(event: String, metadata: [String: String] = [:]) {
+        AnalyticsLogStore.shared.record(event: event, metadata: metadata)
+
         let metadataDescription = metadata
             .map { "\($0.key)=\($0.value)" }
             .sorted()
