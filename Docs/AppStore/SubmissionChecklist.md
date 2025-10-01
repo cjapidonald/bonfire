@@ -28,6 +28,7 @@
 - [ ] Verify privacy policy URL (https://bonfire.example.com/privacy) is live and accessible.
 - [ ] Ensure in-app purchases, if any, are configured and tested.
 - [ ] Run final QA on devices covering English and Vietnamese content.
+- [ ] Review documented risks and mitigations (`Docs/AppStore/Metadata/RisksAndMitigations.md`).
 
 ## Ready to Submit
 Check every item above, then complete App Store Connect submission forms, including pricing, release timing, and contact information for review notes.
