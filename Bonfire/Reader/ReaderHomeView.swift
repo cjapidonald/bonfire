@@ -6,41 +6,46 @@ struct ReaderHomeView: View {
     @State private var levelFilter: LevelFilter = .all
     @State private var topicFilter: TopicFilter = .all
     @State private var lengthFilter: LengthFilter = .all
+    @ObservedObject private var progressStore = ReaderProgressStore.shared
 
     private let contentProvider = ContentProvider.shared
 
     var body: some View {
         NavigationStack(path: $path) {
             VStack(spacing: 24) {
+                dashboardSection
+
                 filterSection
 
                 ScrollView {
-                    if filteredBooks.isEmpty {
-                        VStack(spacing: 12) {
-                            Image(systemName: "books.vertical")
-                                .font(.system(size: 40))
-                                .foregroundStyle(.secondary)
+                    VStack(spacing: 24) {
+                        if filteredBooks.isEmpty {
+                            VStack(spacing: 12) {
+                                Image(systemName: "books.vertical")
+                                    .font(.system(size: 40))
+                                    .foregroundStyle(.secondary)
 
-                            Text("No stories match these filters yet.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 72)
-                        .padding(.horizontal)
-                    } else {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 16)], spacing: 16) {
-                            ForEach(filteredBooks) { book in
-                                Button {
-                                    path.append(book)
-                                } label: {
-                                    BookCardView(book: book)
-                                }
-                                .buttonStyle(.plain)
+                                Text("No stories match these filters yet.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
                             }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 72)
+                            .padding(.horizontal)
+                        } else {
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 16)], spacing: 16) {
+                                ForEach(filteredBooks) { book in
+                                    Button {
+                                        path.append(book)
+                                    } label: {
+                                        BookCardView(book: book)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal)
                         }
-                        .padding(.horizontal)
                     }
                 }
             }
@@ -51,6 +56,17 @@ struct ReaderHomeView: View {
             }
             .background(Color(uiColor: .systemGroupedBackground))
         }
+    }
+
+    private var dashboardSection: some View {
+        ReadingDashboardCard(
+            minutesToday: max(0, progressStore.todaySummary.totalMinutes),
+            starsToday: max(0, progressStore.todaySummary.starsEarned),
+            bookProgress: currentBookSnapshot,
+            streakCount: progressStore.currentStreakCount,
+            weeklyActivity: weeklyActivityDays
+        )
+        .padding(.horizontal)
     }
 
     private var filterSection: some View {
@@ -74,6 +90,233 @@ struct ReaderHomeView: View {
             topicFilter.contains(book.topic) &&
             lengthFilter.contains(book.length)
         }
+    }
+
+    private var currentBookSnapshot: BookProgressSnapshot? {
+        guard let progress = progressStore.mostRecentBookProgress else { return nil }
+        guard let book = contentProvider.books.first(where: { $0.id == progress.bookID }) else { return nil }
+        guard !book.pages.isEmpty else { return nil }
+
+        let pageIndices = Set(book.pages.map { $0.index })
+        let visitedCount = progress.visitedPageIndices.intersection(pageIndices).count
+        let percent = Int((Double(visitedCount) / Double(book.pages.count) * 100).rounded())
+
+        return BookProgressSnapshot(title: book.title, percentComplete: percent)
+    }
+
+    private var weeklyActivityDays: [WeeklyActivityDay] {
+        progressStore.weeklySummaries().map { summary in
+            WeeklyActivityDay(date: summary.date, hasActivity: summary.hasActivity)
+        }
+    }
+}
+
+private struct BookProgressSnapshot {
+    let title: String
+    let percentComplete: Int
+}
+
+private struct WeeklyActivityDay: Identifiable {
+    let date: Date
+    let hasActivity: Bool
+
+    var id: Date { date }
+}
+
+private struct ReadingDashboardCard: View {
+    let minutesToday: Int
+    let starsToday: Int
+    let bookProgress: BookProgressSnapshot?
+    let streakCount: Int
+    let weeklyActivity: [WeeklyActivityDay]
+
+    private static let dayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale.current
+        formatter.setLocalizedDateFormatFromTemplate("EEE")
+        return formatter
+    }()
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("Today's Progress")
+                .font(.headline)
+
+            HStack(spacing: 16) {
+                DashboardMetricView(
+                    value: "\(minutesToday)",
+                    unit: "min",
+                    unitColor: .secondary,
+                    label: "Minutes today"
+                )
+
+                DashboardMetricView(
+                    value: "\(starsToday)",
+                    unit: "★",
+                    unitColor: Color.yellow.opacity(0.85),
+                    label: "Stars earned"
+                )
+            }
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 16) {
+                currentBookView
+                streakView
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+        )
+    }
+
+    private var currentBookView: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Current book")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            if let bookProgress {
+                HStack(alignment: .lastTextBaseline, spacing: 6) {
+                    Text("\(bookProgress.percentComplete)")
+                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+
+                    Text("%")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+
+                Text(bookProgress.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Text("Overall completion")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            } else {
+                HStack(alignment: .lastTextBaseline, spacing: 6) {
+                    Text("--")
+                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .foregroundStyle(.secondary)
+
+                    Text("%")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+
+                Text("Start reading to track progress")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var streakView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Weekly streak")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            HStack(alignment: .lastTextBaseline, spacing: 8) {
+                Text("\(streakCount)")
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+
+                Text(streakCount == 1 ? "day" : "days")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Text("🔥")
+                    .font(.title3)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text("Weekly streak"))
+            .accessibilityValue(Text("\(streakCount) day streak"))
+
+            if weeklyActivity.isEmpty {
+                Text("No reading yet this week")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            } else {
+                HStack(spacing: 12) {
+                    ForEach(weeklyActivity) { day in
+                        VStack(spacing: 6) {
+                            Text(dayAbbreviation(for: day.date))
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.secondary)
+
+                            Circle()
+                                .fill(day.hasActivity ? Color.accentColor : Color.gray.opacity(0.2))
+                                .frame(width: 18, height: 18)
+                                .overlay(
+                                    Circle()
+                                        .stroke(
+                                            Color.accentColor,
+                                            lineWidth: Calendar.current.isDateInToday(day.date) ? 2 : 0
+                                        )
+                                )
+                                .accessibilityLabel(Text(accessibilityLabel(for: day)))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func dayAbbreviation(for date: Date) -> String {
+        let formatted = Self.dayFormatter.string(from: date)
+        return String(formatted.prefix(1)).uppercased()
+    }
+
+    private func accessibilityLabel(for day: WeeklyActivityDay) -> String {
+        let calendar = Calendar.current
+        let dayName = Self.dayFormatter.string(from: day.date)
+
+        if calendar.isDateInToday(day.date) {
+            return day.hasActivity ? "Today: streak active" : "Today: no reading yet"
+        }
+
+        return day.hasActivity ? "\(dayName): streak active" : "\(dayName): no reading"
+    }
+}
+
+private struct DashboardMetricView: View {
+    let value: String
+    let unit: String?
+    let unitColor: Color
+    let label: String
+
+    init(value: String, unit: String? = nil, unitColor: Color = .secondary, label: String) {
+        self.value = value
+        self.unit = unit
+        self.unitColor = unitColor
+        self.label = label
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(value)
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+
+                if let unit {
+                    Text(unit)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(unitColor)
+                }
+            }
+
+            Text(label)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
