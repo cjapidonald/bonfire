@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(SwiftData)
 import SwiftData
+#endif
 
 enum PrivateRecordType: String, Codable, Sendable {
     case userProfile
@@ -128,6 +130,7 @@ struct BookProgressSnapshot: Codable, Sendable {
     var modifiedAt: Date
 }
 
+#if canImport(SwiftData)
 @Model final class UserProfileEntity {
     @Attribute(.unique) var recordName: String
     var displayName: String?
@@ -356,3 +359,4 @@ struct BookProgressSnapshot: Codable, Sendable {
         )
     }
 }
+#endif
