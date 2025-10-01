@@ -24,6 +24,12 @@ struct ProfileView: View {
                     .pickerStyle(.segmented)
                 }
 
+                Section(header: Text(LocalizedStringKey("settings.section.privacy"))) {
+                    Text(LocalizedStringKey("settings.privacy.audio"))
+                    Text(LocalizedStringKey("settings.privacy.ads"))
+                    Text(LocalizedStringKey("settings.privacy.cloudkit"))
+                }
+
                 Section(header: Text("Developer")) {
                     NavigationLink("Developer Mode") {
                         DeveloperModeView()
