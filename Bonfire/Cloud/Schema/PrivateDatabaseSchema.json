@@ -1,0 +1,129 @@
+{
+  "database": "Private",
+  "recordTypes": [
+    {
+      "name": "UserProfile",
+      "fields": [
+        { "name": "displayName", "type": "STRING", "optional": true, "allowsFullTextSearch": true },
+        { "name": "preferredLocale", "type": "STRING" },
+        { "name": "readingStreak", "type": "INT64" },
+        { "name": "lastSessionAt", "type": "TIMESTAMP", "optional": true }
+      ],
+      "indexes": [
+        {
+          "name": "by_locale",
+          "fields": [ { "fieldName": "preferredLocale", "ascending": true } ]
+        }
+      ]
+    },
+    {
+      "name": "ReadingSession",
+      "fields": [
+        { "name": "user", "type": "REFERENCE", "referenceType": "UserProfile" },
+        { "name": "book", "type": "REFERENCE", "referenceType": "Book", "optional": true },
+        { "name": "startedAt", "type": "TIMESTAMP" },
+        { "name": "endedAt", "type": "TIMESTAMP", "optional": true },
+        { "name": "durationSeconds", "type": "INT64" },
+        { "name": "wordsRead", "type": "INT64", "optional": true },
+        { "name": "startPageIndex", "type": "INT64", "optional": true },
+        { "name": "endPageIndex", "type": "INT64", "optional": true },
+        { "name": "audioAsset", "type": "ASSET", "optional": true },
+        { "name": "notes", "type": "STRING", "optional": true, "allowsFullTextSearch": true }
+      ],
+      "indexes": [
+        {
+          "name": "by_user_startedAt",
+          "fields": [
+            { "fieldName": "user", "ascending": true },
+            { "fieldName": "startedAt", "ascending": false }
+          ]
+        },
+        {
+          "name": "by_book_startedAt",
+          "fields": [
+            { "fieldName": "book", "ascending": true },
+            { "fieldName": "startedAt", "ascending": false }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "WordProgress",
+      "fields": [
+        { "name": "user", "type": "REFERENCE", "referenceType": "UserProfile" },
+        { "name": "book", "type": "REFERENCE", "referenceType": "Book", "optional": true },
+        { "name": "lemma", "type": "STRING" },
+        { "name": "proficiency", "type": "DOUBLE" },
+        { "name": "correctCount", "type": "INT64" },
+        { "name": "incorrectCount", "type": "INT64" },
+        { "name": "lastReviewedAt", "type": "TIMESTAMP", "optional": true }
+      ],
+      "indexes": [
+        {
+          "name": "by_user_lemma",
+          "fields": [
+            { "fieldName": "user", "ascending": true },
+            { "fieldName": "lemma", "ascending": true }
+          ]
+        },
+        {
+          "name": "by_book",
+          "fields": [ { "fieldName": "book", "ascending": true } ]
+        }
+      ]
+    },
+    {
+      "name": "Achievement",
+      "fields": [
+        { "name": "user", "type": "REFERENCE", "referenceType": "UserProfile" },
+        { "name": "code", "type": "STRING" },
+        { "name": "earnedAt", "type": "TIMESTAMP" },
+        { "name": "progressValue", "type": "DOUBLE", "optional": true },
+        { "name": "detail", "type": "STRING", "optional": true, "allowsFullTextSearch": true }
+      ],
+      "indexes": [
+        {
+          "name": "by_user_code",
+          "fields": [
+            { "fieldName": "user", "ascending": true },
+            { "fieldName": "code", "ascending": true }
+          ]
+        },
+        {
+          "name": "by_user_earnedAt",
+          "fields": [
+            { "fieldName": "user", "ascending": true },
+            { "fieldName": "earnedAt", "ascending": false }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "BookProgress",
+      "fields": [
+        { "name": "user", "type": "REFERENCE", "referenceType": "UserProfile" },
+        { "name": "book", "type": "REFERENCE", "referenceType": "Book" },
+        { "name": "lastPageIndex", "type": "INT64" },
+        { "name": "percentComplete", "type": "DOUBLE" },
+        { "name": "lastOpenedAt", "type": "TIMESTAMP", "optional": true },
+        { "name": "completedAt", "type": "TIMESTAMP", "optional": true }
+      ],
+      "indexes": [
+        {
+          "name": "by_user_book",
+          "fields": [
+            { "fieldName": "user", "ascending": true },
+            { "fieldName": "book", "ascending": true }
+          ]
+        },
+        {
+          "name": "by_user_lastOpened",
+          "fields": [
+            { "fieldName": "user", "ascending": true },
+            { "fieldName": "lastOpenedAt", "ascending": false }
+          ]
+        }
+      ]
+    }
+  ]
+}
