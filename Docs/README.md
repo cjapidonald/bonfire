@@ -26,3 +26,11 @@
 - Seed the development environment with the sample story for testing.
 - Constraints: No learner or child PII stored in PublicDB.
 - Acceptance Criteria: Records and indexes appear in CloudKit Dashboard; development builds can query seeded content.
+
+# Prompt 25 — CloudKit Schema (PrivateDB User Data)
+
+- Create Private database record types `UserProfile`, `ReadingSession`, `WordProgress`, `Achievement`, and `BookProgress` with per-field data types.
+- Document save policies for each type to avoid clobbering concurrent edits.
+- Ensure audio recordings are stored as Private database assets and describe the deletion flow.
+- Constraints: Audio files must remain private to the learner; provide a safe removal path for uploaded assets.
+- Acceptance Criteria: A dummy `ReadingSession` record can be written and fetched on device using the new schema.
