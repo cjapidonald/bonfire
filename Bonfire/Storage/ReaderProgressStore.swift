@@ -7,23 +7,52 @@ struct SessionReward {
     let updatedProgress: BookProgress
 }
 
+struct DailyReadingSummary: Codable, Hashable {
+    let date: Date
+    private(set) var totalSeconds: TimeInterval
+    private(set) var starsEarned: Int
+
+    init(date: Date, totalSeconds: TimeInterval = 0, starsEarned: Int = 0) {
+        self.date = date
+        self.totalSeconds = totalSeconds
+        self.starsEarned = starsEarned
+    }
+
+    mutating func addSession(duration: TimeInterval, stars: Int) {
+        totalSeconds += duration
+        starsEarned += stars
+    }
+
+    var totalMinutes: Int {
+        Int(totalSeconds / 60)
+    }
+
+    var hasActivity: Bool {
+        totalSeconds >= 60 || starsEarned > 0
+    }
+}
+
 final class ReaderProgressStore: ObservableObject {
     static let shared = ReaderProgressStore()
 
     @Published private(set) var progressByBook: [Book.ID: BookProgress]
     @Published private(set) var totalStars: Int
+    @Published private(set) var dailySummaries: [Date: DailyReadingSummary]
 
     private let userDefaults: UserDefaults
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
     private let progressKey = "reader.progress.records"
     private let starsKey = "reader.progress.stars"
+    private let dailySummariesKey = "reader.progress.dailySummaries"
     private let baselineWordsPerMinute: Double = 160
+    private var calendar = Calendar.current
 
     init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults
         encoder.dateEncodingStrategy = .iso8601
         decoder.dateDecodingStrategy = .iso8601
+        calendar.timeZone = TimeZone.current
 
         if let data = userDefaults.data(forKey: progressKey),
            let decoded = try? decoder.decode([String: BookProgress].self, from: data) {
@@ -36,6 +65,15 @@ final class ReaderProgressStore: ObservableObject {
         }
 
         totalStars = userDefaults.integer(forKey: starsKey)
+
+        if let data = userDefaults.data(forKey: dailySummariesKey),
+           let decoded = try? decoder.decode([DailyReadingSummary].self, from: data) {
+            dailySummaries = decoded.reduce(into: [:]) { partialResult, summary in
+                partialResult[summary.date] = summary
+            }
+        } else {
+            dailySummaries = [:]
+        }
     }
 
     func progress(for book: Book) -> BookProgress {
@@ -81,11 +119,47 @@ final class ReaderProgressStore: ObservableObject {
 
         let newlyVisited = Array(sessionVisited.subtracting(visitedBefore)).sorted()
 
+        updateDailySummary(for: recording.createdAt, duration: recording.duration, stars: starsAwarded)
+
         return SessionReward(
             starsAwarded: starsAwarded,
             newlyVisitedPageIndices: newlyVisited,
             updatedProgress: progress
         )
+    }
+
+    var todaySummary: DailyReadingSummary {
+        let today = normalizedDate(for: Date())
+        return dailySummaries[today] ?? DailyReadingSummary(date: today)
+    }
+
+    func weeklySummaries(referenceDate: Date = Date()) -> [DailyReadingSummary] {
+        let today = normalizedDate(for: referenceDate)
+        return (0..<7).compactMap { offset in
+            guard let date = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
+            let normalized = normalizedDate(for: date)
+            return dailySummaries[normalized] ?? DailyReadingSummary(date: normalized)
+        }
+        .sorted(by: { $0.date < $1.date })
+    }
+
+    var currentStreakCount: Int {
+        var streak = 0
+        var cursor = normalizedDate(for: Date())
+
+        while let summary = dailySummaries[cursor], summary.hasActivity {
+            streak += 1
+            guard let previous = calendar.date(byAdding: .day, value: -1, to: cursor) else { break }
+            cursor = normalizedDate(for: previous)
+        }
+
+        return streak
+    }
+
+    var mostRecentBookProgress: BookProgress? {
+        progressByBook.values
+            .sorted(by: { ($0.lastReadAt ?? .distantPast) > ($1.lastReadAt ?? .distantPast) })
+            .first
     }
 
     private func visitedPages(
@@ -158,5 +232,28 @@ final class ReaderProgressStore: ObservableObject {
 
     private func persistStarTotal() {
         userDefaults.set(totalStars, forKey: starsKey)
+    }
+
+    private func updateDailySummary(for date: Date, duration: TimeInterval, stars: Int) {
+        let normalizedDate = normalizedDate(for: date)
+        var summary = dailySummaries[normalizedDate] ?? DailyReadingSummary(date: normalizedDate)
+        summary.addSession(duration: duration, stars: stars)
+        dailySummaries[normalizedDate] = summary
+        persistDailySummaries()
+    }
+
+    private func normalizedDate(for date: Date) -> Date {
+        calendar.startOfDay(for: date)
+    }
+
+    private func persistDailySummaries() {
+        let summaries = Array(dailySummaries.values)
+
+        do {
+            let data = try encoder.encode(summaries)
+            userDefaults.set(data, forKey: dailySummariesKey)
+        } catch {
+            print("Failed to persist daily summaries: \(error)")
+        }
     }
 }
